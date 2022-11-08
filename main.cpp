@@ -10,7 +10,6 @@ int main(int argc, char* argv[])
 {
 	std::string fragmentName = "RPf_00154"; //"cube";
 
-	//std::string fragmentPath = "..\\fragments\\" + fragmentName + "\\" + fragmentName + ".obj";//".\\fragments\\" + fragmentName + "\\" + fragmentName + ".obj";
 	std::string fragmentPath = "..\\fragments\\" + fragmentName + "\\" + fragmentName + ".obj";//".\\fragments\\" + fragmentName + "\\" + fragmentName + ".obj";
 	std::string outputPath = "..\\fragments\\" + fragmentName + "\\" ;
 	ObjFragment fragment = ObjFragment(fragmentPath);
