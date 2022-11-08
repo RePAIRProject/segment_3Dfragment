@@ -39,14 +39,17 @@ void ObjFragment::load()
 	igl::principal_curvature(m_Vertices, m_Faces, pd1, pd2, pv1, pv2);
 	m_MeshCurvedness = 0.5*(pv1.array().square() + pv2.array().square()).sqrt();*/
 	
-	/*std::ofstream f("..\\fragments\\RPf_00154\\curvedness.txt");
+	/*
+	//In the future if we will want to reload curvedness quicker
+	
+	std::ofstream f("..\\fragments\\RPf_00154\\curvedness.txt");
 	for (int i = 0 ; i < m_MeshCurvedness.rows(); ++i) {
 		f << m_MeshCurvedness(i) << '\n';
-	}*/
+	}
 
-
+	*/
 	m_MeshCurvedness.resize(m_Vertices.rows());
-	// read here from file to m_MeshCurvedness
+	//read here from file to m_MeshCurvedness
 	std::ifstream input("..\\fragments\\RPf_00154\\curvedness.txt");
 	int i = 0;
 	for (std::string line; getline(input, line); )
@@ -57,21 +60,31 @@ void ObjFragment::load()
 	
 }
 
-// Todo : return Segment
-//void 
-void ObjFragment::extractIntactSurface(std::vector<Eigen::MatrixXd> Vs, std::vector<Eigen::MatrixXd> Fs,Segment &oIntactSurface)
+
+double ObjFragment::getSimilarThreshByPos(double fracture)
 {
-	Eigen::VectorXd mesh_curvedness_ = m_MeshCurvedness.array().log(); // calculated by  (0.5 * (pv1_.array().square() + pv2_.array().square()).sqrt()); in the preprocessing
+	/*
+	*  fracture - number between 0 to 1
+	*/
+
+	Eigen::VectorXd mesh_curvedness_ = m_MeshCurvedness.array().log();
 	mesh_curvedness_ = ((mesh_curvedness_.array() - mesh_curvedness_.minCoeff()) / (mesh_curvedness_.maxCoeff() - mesh_curvedness_.minCoeff()));
 
 	std::vector<double> log_norm_curvedness;
 	log_norm_curvedness.resize(mesh_curvedness_.size());
 	Eigen::VectorXd::Map(&log_norm_curvedness[0], log_norm_curvedness.size()) = mesh_curvedness_;
-	std::sort(log_norm_curvedness.begin(), log_norm_curvedness.end()); // Yaniv line
+	std::sort(log_norm_curvedness.begin(), log_norm_curvedness.end());
 	const auto median_it = log_norm_curvedness.begin() + log_norm_curvedness.size() * 0.65;//0.65 good for fine segmentation  //0.5 good for detecting intact vs fractured when removing region merging 
 	std::nth_element(log_norm_curvedness.begin(), median_it, log_norm_curvedness.end());
-	//*median_it = 0.76;
-	double segment_threshold_value = 0.1;//*median_it; /// Yaniv: threshold of the difference between verticies.
+	return *median_it;
+}
+
+
+void ObjFragment::segmentByCurvedness(std::vector<std::vector<int>> &oRegionsList, std::vector<std::vector<int>> &oRegionOutsideBoundaryVerticesList,double similarThreshold)
+{
+
+	Eigen::VectorXd mesh_curvedness_ = m_MeshCurvedness.array().log(); 
+	mesh_curvedness_ = ((mesh_curvedness_.array() - mesh_curvedness_.minCoeff()) / (mesh_curvedness_.maxCoeff() - mesh_curvedness_.minCoeff()));
 
 	std::map<int, double> available_curves;
 	for (auto i = 0; i < mesh_curvedness_.size(); i++)
@@ -79,8 +92,6 @@ void ObjFragment::extractIntactSurface(std::vector<Eigen::MatrixXd> Vs, std::vec
 		//available_curves[i] = static_cast<float>(mesh_curvedness_[i]);
 		available_curves[i] = static_cast<double>(mesh_curvedness_[i]);
 	}
-	std::vector<std::vector<int>> regions_list_;
-	std::vector<std::vector<int>> region_outside_boundary_vertices_list_;
 
 	while (!available_curves.empty())
 	{
@@ -96,50 +107,55 @@ void ObjFragment::extractIntactSurface(std::vector<Eigen::MatrixXd> Vs, std::vec
 		current_region.emplace(min_curvature_index, min_curvature_index); // sort of inserting
 		current_seeds.push_back(min_curvature_index);
 
-		grow_current_region(available_curves, current_region, current_region_boundary_neighbors, current_seeds, min_curvature_index, segment_threshold_value);// mani
+		grow_current_region(available_curves, current_region, current_region_boundary_neighbors, current_seeds, min_curvature_index, similarThreshold);// mani
 
 		std::vector<int> vec_current_region;
 		for (const auto& curr : current_region)
 			vec_current_region.push_back(curr.second);
-		regions_list_.push_back(vec_current_region);
+		oRegionsList.push_back(vec_current_region);
 
 		std::vector<int> vec_current_region_boundary_neighbors;
 		for (const auto& curr : current_region_boundary_neighbors)
 			vec_current_region_boundary_neighbors.push_back(curr.second);
-		region_outside_boundary_vertices_list_.push_back(vec_current_region_boundary_neighbors);
+		oRegionOutsideBoundaryVerticesList.push_back(vec_current_region_boundary_neighbors);
 	}
+}
+
+
+// Todo : return Segment
+//void 
+void ObjFragment::extractIntactSurface(Segment &oIntactSurface, std::vector<Segment> &segments,const Eigen::VectorXd normedCurvedness)
+{
 	
-	Eigen::MatrixXd piece_vertices_with_region = merge_regions(regions_list_);
+	int chosenIndex = 0;
+	double minMeanCurvedness = 9999999;
+	int k = 0;
 
-
-		
-		int chosenIndex = 0;
-		double minMeanCurvedness = 9999999;
-		int k = 0;
-
-		for (Segment& seg : segmented_regions_)
+	for (Segment& seg : segments)
+	{
+		double segCurvedness = 0;
+		for (int verIndex : seg.piece_vertices_index_)
 		{
-			double segCurvedness = 0;
-			for (int verIndex : seg.piece_vertices_index_)
-			{
-				segCurvedness += mesh_curvedness_[verIndex];
-			}
+			segCurvedness += normedCurvedness[verIndex];
+		}
 
 			
-			double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
+		double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
 
-			if (segAvgCur < minMeanCurvedness)
-			{
-				minMeanCurvedness = segAvgCur;
-				chosenIndex = k;
-			}
-
-			++k;
+		if (segAvgCur < minMeanCurvedness)
+		{
+			minMeanCurvedness = segAvgCur;
+			chosenIndex = k;
 		}
+
+		++k;
+	}
+
+	oIntactSurface = segments[chosenIndex];
 
 		std::set<int> uniqueVerticesIndexes;
 		std::set<int> uniqueFacesIndexes;
-		for (int vertexIndex : segmented_regions_[chosenIndex].piece_vertices_index_)
+		for (int vertexIndex : oIntactSurface.piece_vertices_index_)
 		{
 			//int  = oIntactSurface.piece_vertices_index_[i];
 			//uniqueVerticesIndexes.insert(vertexIndex);
@@ -208,10 +224,7 @@ void ObjFragment::grow_current_region(std::map<int, double>& available_curves, s
 		for (auto j = 0; j < m_adjacentVertices[current_seeds[i]].size(); j++)
 		{
 			auto current_neighbor = m_adjacentVertices[current_seeds[i]][j];
-			// if ((available_curves.count(current_neighbor) == 1) && (mesh_curvedness_(current_neighbor) * mesh_curvedness_(current_seeds[i]) < segment_threshold_value))
 			if ((available_curves.count(current_neighbor) == 1) && (m_MeshCurvedness(current_neighbor) * m_MeshCurvedness(current_seeds[i]) < segment_threshold_value))
-				// Yaniv : instead of mult , compare with value under threshold
-				//if ((available_curves.count(current_neighbor) == 1) && 1-std::fabs(mesh_curvedness_(current_neighbor) - mesh_curvedness_(current_seeds[i]) < segment_threshold_value))
 			{
 				current_region.emplace(current_neighbor, current_neighbor);
 				available_curves.erase(current_neighbor);
@@ -246,7 +259,7 @@ void ObjFragment::grow_current_region(std::map<int, double>& available_curves, s
 }
 
 
-Eigen::MatrixXd ObjFragment::merge_regions(std::vector<std::vector<int>> regions_list_)
+void ObjFragment::filterSmallRegions(std::vector<Segment> &segments,std::vector<std::vector<int>> &regions_list_)
 {
 	Eigen::MatrixXd vertices_with_region_indication = m_Vertices;
 	std::map<int, std::vector<int>> merged_regions_list;
@@ -267,31 +280,13 @@ Eigen::MatrixXd ObjFragment::merge_regions(std::vector<std::vector<int>> regions
 		else
 		{
 			const Segment current = Segment(regions_list_[i]);
-			segmented_regions_.push_back(current);
+			segments.push_back(current);
+			//segmented_regions_.push_back(current);
 		}
 
-		////if I want to color all formed regions
-		 //const segment current = segment(regions_list_[i], *this);
-		 //segmented_regions_.insert({ i,current });
-
-		for (auto j = 0; j < regions_list_[i].size(); j++)
-		{
-			vertices_with_region_indication(regions_list_[i][j], region_index_column) = i;
-		}
 
 	}
 
-	////if I want to color all big regions and all small regions as one
-	// segment all_small_segments = segment(small_regions[0], *this);
-	// for (auto i = 1; i < small_regions.size(); i++)
-	// {
-	// 	all_small_segments.piece_vertices_index_.insert(all_small_segments.piece_vertices_index_.end(), small_regions[i].begin(), small_regions[i].end());
-	// }
-	// segmented_regions_.insert({ segmented_regions_.size(), all_small_segments });
-
-
-	Eigen::MatrixXd updated_vertices_with_region_indication = vertices_with_region_indication;
-	return updated_vertices_with_region_indication;
 }
 
 
