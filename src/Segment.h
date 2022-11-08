@@ -1,14 +1,14 @@
 #pragma once
 #include <igl/adjacency_list.h>
 
+
 class Segment
 {
 public:
 	Segment();
 
 	std::vector<int> piece_vertices_index_;
-	//	typedef boost::bimap< int, int> bm;
-	//Segment(std::vector<int> vertices_index, ObjFragment& piece_obj);
+	
 	Segment(std::vector<int> vertices_index);
 
 	Segment(Eigen::MatrixXd V, Eigen::MatrixXd  TC, Eigen::MatrixXd N,
