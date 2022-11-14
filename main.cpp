@@ -32,15 +32,35 @@ int main(int argc, char* argv[])
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
 
-	double simThresh = fragment.getSimilarThreshByPos(0.65);
-	fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
+	bool isSegmented = false;
+
+	double fracture = 0.65;
 	std::vector<Segment> segments;
-	fragment.filterSmallRegions(segments, oRegionsList);
-	std::cout << "Found " << segments.size() << " Segments" << std::endl;
+	int nTrials = 1;
+
+	while (!isSegmented)
+	{
+		double simThresh = fragment.getSimilarThreshByPos(fracture);
+		std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
+		fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
+		fragment.filterSmallRegions(segments, oRegionsList);
+		std::cout << "In trial: " << nTrials <<"Found " << segments.size() << " Segments" << std::endl;
+
+		if (segments.size() == 0)
+		{
+			fracture = fracture + 0.05;
+		}
+		else {
+			if (segments.size() == 1)
+			{
+				fracture = fracture - 0.12;
+			}
+		}
+
+		nTrials += 1;
+	}
+
 	Segment intactSurface;
-	/*Eigen::VectorXd normedCurvedness;
-	normedCurvedness = fragment.m_MeshCurvedness.array().log();
-	normedCurvedness = ((normedCurvedness.array() - normedCurvedness.minCoeff()) / (normedCurvedness.maxCoeff() - normedCurvedness.minCoeff()));*/
 	fragment.extractIntactSurface(intactSurface,segments);
 	
 	std::string fragFolderPath = fragmentPath.substr(0, fragmentPath.find_last_of("\\/"));
