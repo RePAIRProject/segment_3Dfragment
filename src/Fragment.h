@@ -22,11 +22,12 @@ public:
 	Eigen::MatrixXi m_Faces2Normals;//   FN  #F list of face indices into vertex normals
 	Eigen::MatrixXd m_Colors;
 	Eigen::VectorXd m_MeshCurvedness;
+	Eigen::VectorXd m_NormedMeshCurvedness;
 	std::vector<std::vector<int>> m_adjacentVertices;
 	std::vector <std::vector<int>> m_VerticesAdjacentFacesList; // indexes from zero...
 
 	void load();
-	void extractIntactSurface(Segment& oIntactSurface, std::vector<Segment>& segments, Eigen::VectorXd normedCurvedness);
+	void extractIntactSurface(Segment& oIntactSurface, std::vector<Segment>& segments);
 
 	double getSimilarThreshByPos(double fracture);
 	void segmentByCurvedness(std::vector<std::vector<int>>& oRegionsList,std::vector<std::vector<int>>& oRegionOutsideBoundaryVerticesList, double similarThreshold);

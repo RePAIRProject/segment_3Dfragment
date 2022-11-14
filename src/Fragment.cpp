@@ -38,7 +38,9 @@ void ObjFragment::load()
 	Eigen::VectorXd pv1, pv2;
 	igl::principal_curvature(m_Vertices, m_Faces, pd1, pd2, pv1, pv2);
 	m_MeshCurvedness = 0.5*(pv1.array().square() + pv2.array().square()).sqrt();
-	
+	m_NormedMeshCurvedness = m_MeshCurvedness.array().log();
+	m_NormedMeshCurvedness = ((m_NormedMeshCurvedness.array() - m_NormedMeshCurvedness.minCoeff()) / (m_NormedMeshCurvedness.maxCoeff() - m_NormedMeshCurvedness.minCoeff()));
+
 	/*
 	//In the future if we will want to reload curvedness quicker
 	
@@ -72,12 +74,10 @@ double ObjFragment::getSimilarThreshByPos(double fracture)
 	*  fracture - number between 0 to 1
 	*/
 
-	Eigen::VectorXd mesh_curvedness_ = m_MeshCurvedness.array().log();
-	mesh_curvedness_ = ((mesh_curvedness_.array() - mesh_curvedness_.minCoeff()) / (mesh_curvedness_.maxCoeff() - mesh_curvedness_.minCoeff()));
-
+	
 	std::vector<double> log_norm_curvedness;
-	log_norm_curvedness.resize(mesh_curvedness_.size());
-	Eigen::VectorXd::Map(&log_norm_curvedness[0], log_norm_curvedness.size()) = mesh_curvedness_;
+	log_norm_curvedness.resize(m_NormedMeshCurvedness.size());
+	Eigen::VectorXd::Map(&log_norm_curvedness[0], log_norm_curvedness.size()) = m_NormedMeshCurvedness;
 	std::sort(log_norm_curvedness.begin(), log_norm_curvedness.end());
 	const auto median_it = log_norm_curvedness.begin() + log_norm_curvedness.size() * 0.65;//0.65 good for fine segmentation  //0.5 good for detecting intact vs fractured when removing region merging 
 	std::nth_element(log_norm_curvedness.begin(), median_it, log_norm_curvedness.end());
@@ -88,14 +88,12 @@ double ObjFragment::getSimilarThreshByPos(double fracture)
 void ObjFragment::segmentByCurvedness(std::vector<std::vector<int>> &oRegionsList, std::vector<std::vector<int>> &oRegionOutsideBoundaryVerticesList,double similarThreshold)
 {
 
-	Eigen::VectorXd mesh_curvedness_ = m_MeshCurvedness.array().log(); 
-	mesh_curvedness_ = ((mesh_curvedness_.array() - mesh_curvedness_.minCoeff()) / (mesh_curvedness_.maxCoeff() - mesh_curvedness_.minCoeff()));
-
+	
 	std::map<int, double> available_curves;
-	for (auto i = 0; i < mesh_curvedness_.size(); i++)
+	for (auto i = 0; i < m_NormedMeshCurvedness.size(); i++)
 	{
 		//available_curves[i] = static_cast<float>(mesh_curvedness_[i]);
-		available_curves[i] = static_cast<double>(mesh_curvedness_[i]);
+		available_curves[i] = static_cast<double>(m_NormedMeshCurvedness[i]);
 	}
 
 	while (!available_curves.empty())
@@ -129,7 +127,7 @@ void ObjFragment::segmentByCurvedness(std::vector<std::vector<int>> &oRegionsLis
 
 // Todo : return Segment
 //void 
-void ObjFragment::extractIntactSurface(Segment &oIntactSurface, std::vector<Segment> &segments,const Eigen::VectorXd normedCurvedness)
+void ObjFragment::extractIntactSurface(Segment &oIntactSurface, std::vector<Segment> &segments)
 {
 	
 	int chosenIndex = 0;
@@ -141,7 +139,7 @@ void ObjFragment::extractIntactSurface(Segment &oIntactSurface, std::vector<Segm
 		double segCurvedness = 0;
 		for (int verIndex : seg.piece_vertices_index_)
 		{
-			segCurvedness += normedCurvedness[verIndex];
+			segCurvedness += m_NormedMeshCurvedness[verIndex];
 		}
 
 			
@@ -222,18 +220,18 @@ void ObjFragment::extractIntactSurface(Segment &oIntactSurface, std::vector<Segm
 void ObjFragment::grow_current_region(std::map<int, double>& available_curves, std::unordered_map<int, int>& current_region, std::unordered_map<int, int>& current_region_boundary_neighbors, std::vector<int> current_seeds, int min_curvature_index, double segment_threshold_value)
 {
 
-	auto segment_avg = m_MeshCurvedness(min_curvature_index);
+	auto segment_avg = m_NormedMeshCurvedness(min_curvature_index);
 	auto count = 1;
 	for (auto i = 0; i < current_seeds.size(); i++)
 	{
 		for (auto j = 0; j < m_adjacentVertices[current_seeds[i]].size(); j++)
 		{
 			auto current_neighbor = m_adjacentVertices[current_seeds[i]][j];
-			if ((available_curves.count(current_neighbor) == 1) && (m_MeshCurvedness(current_neighbor) * m_MeshCurvedness(current_seeds[i]) < segment_threshold_value))
+			if ((available_curves.count(current_neighbor) == 1) && (m_NormedMeshCurvedness(current_neighbor) * m_NormedMeshCurvedness(current_seeds[i]) < segment_threshold_value))
 			{
 				current_region.emplace(current_neighbor, current_neighbor);
 				available_curves.erase(current_neighbor);
-				if (m_MeshCurvedness(current_neighbor) < segment_threshold_value)
+				if (m_NormedMeshCurvedness(current_neighbor) < segment_threshold_value)
 				{
 					current_seeds.push_back(current_neighbor);
 				}

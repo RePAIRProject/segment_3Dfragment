@@ -32,15 +32,16 @@ int main(int argc, char* argv[])
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
 
-	fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, 0.1);
+	double simThresh = fragment.getSimilarThreshByPos(0.65);
+	fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
 	std::vector<Segment> segments;
 	fragment.filterSmallRegions(segments, oRegionsList);
-
+	std::cout << "Found " << segments.size() << " Segments" << std::endl;
 	Segment intactSurface;
-	Eigen::VectorXd normedCurvedness;
+	/*Eigen::VectorXd normedCurvedness;
 	normedCurvedness = fragment.m_MeshCurvedness.array().log();
-	normedCurvedness = ((normedCurvedness.array() - normedCurvedness.minCoeff()) / (normedCurvedness.maxCoeff() - normedCurvedness.minCoeff()));
-	fragment.extractIntactSurface(intactSurface,segments, normedCurvedness);
+	normedCurvedness = ((normedCurvedness.array() - normedCurvedness.minCoeff()) / (normedCurvedness.maxCoeff() - normedCurvedness.minCoeff()));*/
+	fragment.extractIntactSurface(intactSurface,segments);
 	
 	std::string fragFolderPath = fragmentPath.substr(0, fragmentPath.find_last_of("\\/"));
 	fragment.saveAsObj(fragFolderPath + "\\" + outFileName, intactSurface);
