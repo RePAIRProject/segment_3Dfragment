@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 		std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 		fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
 		fragment.filterSmallRegions(segments, oRegionsList);
-		std::cout << "In trial: " << nTrials <<"Found " << segments.size() << " Segments" << std::endl;
+		std::cout << "In trial: " << nTrials <<" Found " << segments.size() << " Segments" << std::endl;
 
 		if (segments.size() == 0)
 		{
@@ -55,9 +55,22 @@ int main(int argc, char* argv[])
 			{
 				fracture = fracture - 0.12;
 			}
+			else
+			{
+				isSegmented = true;
+			}
+			
 		}
 
 		nTrials += 1;
+
+		if (fracture > 1)
+		{
+			std::cout << "fracrure value is " << fracture << " and it should be between 0 to 1" << std::endl;
+			std::cout << "Please rerun mannually..exiting" << std::endl;
+			std::exit(1);
+		}
+
 	}
 
 	Segment intactSurface;

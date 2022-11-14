@@ -38,8 +38,28 @@ void ObjFragment::load()
 	Eigen::VectorXd pv1, pv2;
 	igl::principal_curvature(m_Vertices, m_Faces, pd1, pd2, pv1, pv2);
 	m_MeshCurvedness = 0.5*(pv1.array().square() + pv2.array().square()).sqrt();
-	m_NormedMeshCurvedness = m_MeshCurvedness.array().log();
-	m_NormedMeshCurvedness = ((m_NormedMeshCurvedness.array() - m_NormedMeshCurvedness.minCoeff()) / (m_NormedMeshCurvedness.maxCoeff() - m_NormedMeshCurvedness.minCoeff()));
+
+	Eigen::MatrixXd curvednessLog = m_MeshCurvedness.array().log();
+	//m_NormedMeshCurvedness = 
+	double minCurvedness = curvednessLog.minCoeff();// This might be -inf 
+	double maxCurvedness = curvednessLog.maxCoeff();
+	double inf = std::numeric_limits<double>::infinity();
+
+	if (minCurvedness == -inf || maxCurvedness == inf)
+	{
+		std::cout << "Min or Max curvdeness are infinity after applying log...cancel log operation" << std::endl;
+		//m_NormedMeshCurvedness = m_MeshCurvedness;
+		minCurvedness = m_MeshCurvedness.minCoeff();
+		maxCurvedness = m_MeshCurvedness.maxCoeff();
+		m_NormedMeshCurvedness = ((m_MeshCurvedness.array() - minCurvedness) / (maxCurvedness - minCurvedness));
+	}
+	else
+	{
+		m_NormedMeshCurvedness = ((curvednessLog.array() - minCurvedness) / (maxCurvedness - minCurvedness));
+	}
+	
+	
+
 
 	/*
 	//In the future if we will want to reload curvedness quicker
