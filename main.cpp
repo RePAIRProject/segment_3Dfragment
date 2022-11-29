@@ -19,5 +19,5 @@ int main(int argc, char* argv[])
 	//std::string fragmentPath = "..\\fragments\\" + fragmentName + "\\" + fragmentName + ".obj";
 	//std::string outputPath = "..\\fragments\\" + fragmentName + "\\" ;
 
-	segment_intact_surface(all_args);
+	segment(all_args);
 }

@@ -1,5 +1,5 @@
 #include "Scripts.h"
-
+#include "Visualization.h"
 
 
 void segment_intact_surface(std::vector<std::string> all_args)
@@ -70,15 +70,47 @@ void segment_intact_surface(std::vector<std::string> all_args)
 
 
 	// For debug:
-	igl::opengl::glfw::Viewer viewer;
+	
+}
 
-	std::map<int, Eigen::RowVector3d> colors;
-	int segID = viewer.append_mesh();
-	viewer.data(segID).set_mesh(intactSurface.m_Vertices, intactSurface.m_Faces);
-	colors.emplace(viewer.data().id, 0.5 * Eigen::RowVector3d::Random().array() + 0.5);
-	viewer.data(segID).set_colors(colors[segID]);
-	viewer.data(segID).show_lines = false;
+void segment(std::vector<std::string> all_args)
+{
+	std::string fragmentPath = all_args[0];
+	std::string outFileName = all_args[1];
+	ObjFragment fragment = ObjFragment(fragmentPath);
+	std::cout << "Loading data" << std::endl;
+	fragment.load();
 
-	viewer.data().set_face_based(true);
-	viewer.launch();
+	std::cout << "Start to segment" << std::endl;
+	double fracture = 0.65;
+	double simThresh = fragment.getSimilarThreshByPos(fracture);
+	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
+	std::vector<std::vector<int>> oRegionsList;
+	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
+	fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
+
+
+	//std::vector<Segment> segments;
+	std::vector<Segment> segments; // make it call by reference
+	for (int iRegion = 0; iRegion < 30; iRegion++)
+	{
+		Segment segment(oRegionsList[iRegion]);
+		segment.loadBasicData(fragment.m_VerticesAdjacentFacesList,
+			fragment.m_Faces, fragment.m_Vertices,
+			fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals);
+		segments.push_back(segment);
+	}
+
+
+	Visualizer visualizer;
+	std::map<int, Eigen::RowVector3d> meshesColors;
+	visualizer.generateRandomColors(meshesColors, segments.size());
+
+	for (int i = 0; i < segments.size(); i++)
+	{
+		//Segment curr = segments[i];
+		visualizer.appendMesh(segments[i].m_Vertices, segments[i].m_Faces, meshesColors[i]);
+	}
+
+	visualizer.launch();
 }
