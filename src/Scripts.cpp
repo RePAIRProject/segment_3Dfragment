@@ -57,8 +57,12 @@ void segment_intact_surface(std::vector<std::string> all_args)
 
 	}
 
-	Segment intactSurface;
-	fragment.extractIntactSurface(intactSurface, segments);
+	int intactIndex = fragment.findIntactSegmentIndex(segments);
+
+	Segment intactSurface(segments[intactIndex]);
+	intactSurface.loadBasicData(fragment.m_VerticesAdjacentFacesList,
+								fragment.m_Faces, fragment.m_Vertices,
+								fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals);
 
 	std::string fragFolderPath = fragmentPath.substr(0, fragmentPath.find_last_of("\\/"));
 	fragment.saveAsObj(fragFolderPath + "\\" + outFileName, intactSurface);

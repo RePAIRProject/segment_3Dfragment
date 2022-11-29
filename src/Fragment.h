@@ -27,7 +27,9 @@ public:
 	std::vector <std::vector<int>> m_VerticesAdjacentFacesList; // indexes from zero...
 
 	void load();
-	void extractIntactSurface(Segment& oIntactSurface, std::vector<Segment>& segments);
+	//void extractIntactSurface(Segment& oIntactSurface, std::vector<Segment>& segments);
+	int findIntactSegmentIndex(std::vector<Segment>& segments);
+
 
 	double getSimilarThreshByPos(double fracture);
 	void segmentByCurvedness(std::vector<std::vector<int>>& oRegionsList,std::vector<std::vector<int>>& oRegionOutsideBoundaryVerticesList, double similarThreshold);
