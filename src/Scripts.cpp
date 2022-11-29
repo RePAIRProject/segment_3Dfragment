@@ -91,26 +91,64 @@ void segment(std::vector<std::string> all_args)
 
 
 	//std::vector<Segment> segments;
-	std::vector<Segment> segments; // make it call by reference
-	for (int iRegion = 0; iRegion < oRegionsList.size(); iRegion++)
-	{
-		Segment segment(oRegionsList[iRegion]);
-		segment.loadBasicData(fragment.m_VerticesAdjacentFacesList,
-			fragment.m_Faces, fragment.m_Vertices,
-			fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals);
-		segments.push_back(segment);
-	}
+	//std::vector<Segment> segments; // make it call by reference
+	//for (int iRegion = 0; iRegion < oRegionsList.size(); iRegion++)
+	//{
+	//	Segment segment(oRegionsList[iRegion]);
+	//	segment.loadBasicData(fragment.m_VerticesAdjacentFacesList,
+	//		fragment.m_Faces, fragment.m_Vertices,
+	//		fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals);
+	//	segments.push_back(segment);
+	//}
 
 
 	Visualizer visualizer;
-	std::map<int, Eigen::RowVector3d> meshesColors;
-	visualizer.generateRandomColors(meshesColors, segments.size());
+	std::map<int, Eigen::RowVector3d> meshColors;
+	visualizer.generateRandomColors(meshColors, oRegionsList.size());
 
-	for (int i = 0; i < segments.size(); i++)
+	Eigen::MatrixXd segmentColors; 
+	//segmentColors.resizeLike(fragment.m_Vertices);
+	segmentColors.resize(fragment.m_Vertices.rows(),4);
+
+	//segmentColors = Eigen::MatrixXd::Zero(fragment.m_Colors.rows(), fragment.m_Colors.cols());
+	auto colorIt = meshColors.begin();
+	for (int iRegion = 0; iRegion < oRegionsList.size(); iRegion++)
 	{
-		//Segment curr = segments[i];
-		visualizer.appendMesh(segments[i].m_Vertices, segments[i].m_Faces, meshesColors[i]);
+		std::vector<int> regionVerticesIndx = oRegionsList[iRegion];
+		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
+		{
+			/*for (int rgb = 0; rgb < 3; rgb++)
+			{
+				double rgbVal = colorIt->second.coeff(rgb);
+				segmentColors(regionVerticesIndx[iVert], rgb) =rgbVal;
+			}*/
+			segmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+		}
+		++colorIt;
 	}
 
+
+	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, segmentColors);// meshColors[0] //segmentColors
+	/*visualizer.m_Viewer.data().set_mesh(fragment.m_Vertices, fragment.m_Faces);
+	visualizer.m_Viewer.data().set_colors(stam);*/
+	//visualizer.m_Viewer.data().set_data(stam);
+
+	visualizer.m_Viewer.callback_key_down =
+		[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
+	{
+
+		switch (key) {
+		case '1': // for debug
+			visualizer.m_Viewer.data().set_colors(meshColors[0]);
+			std::cout << "Pressed 1" << std::endl;
+			break;
+		case '2': // for debug
+			//visualizer.m_Viewer.data_list[0].set_mesh(fragment.m_Vertices, fragment.m_Faces);
+			visualizer.m_Viewer.data().set_colors(segmentColors);
+			std::cout << "Pressed 2" << std::endl;
+			break;
+		}
+		return false;
+	};
 	visualizer.launch();
 }

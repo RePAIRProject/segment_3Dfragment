@@ -17,9 +17,9 @@ int Visualizer::appendMesh(const Eigen::MatrixXd& vertices, const Eigen::MatrixX
 {
 
 	int segID = m_Viewer.append_mesh();
-	m_Viewer.data(segID).set_mesh(vertices, faces);
-	m_Viewer.data(segID).set_colors(colors);
-	m_Viewer.data(segID).show_lines = false;
+	m_Viewer.data().set_mesh(vertices, faces);
+	m_Viewer.data().set_colors(colors);
+	m_Viewer.data().show_lines = false;
 
 	return segID;
 }
