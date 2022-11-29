@@ -16,17 +16,6 @@ void Visualizer::generateRandomColors(std::map<int, Eigen::RowVector3d> &oColors
 int Visualizer::appendMesh(const Eigen::MatrixXd& vertices, const Eigen::MatrixXi& faces, const Eigen::MatrixXd& colors)
 {
 
-	//std::map<int, Eigen::RowVector3d> colors;
-	//int segID = viewer.append_mesh();
-	//viewer.data(segID).set_mesh(intactSurface.m_Vertices, intactSurface.m_Faces);
-	//colors.emplace(viewer.data().id, 0.5 * Eigen::RowVector3d::Random().array() + 0.5);
-	//viewer.data(segID).set_colors(colors[segID]);
-	//viewer.data(segID).show_lines = false;
-
-	//viewer.data().set_face_based(true);
-	//viewer.launch();
-
-	
 	int segID = m_Viewer.append_mesh();
 	m_Viewer.data(segID).set_mesh(vertices, faces);
 	m_Viewer.data(segID).set_colors(colors);

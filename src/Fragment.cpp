@@ -92,7 +92,7 @@ double ObjFragment::getSimilarThreshByPos(double fracture)
 	log_norm_curvedness.resize(m_NormedMeshCurvedness.size());
 	Eigen::VectorXd::Map(&log_norm_curvedness[0], log_norm_curvedness.size()) = m_NormedMeshCurvedness;
 	std::sort(log_norm_curvedness.begin(), log_norm_curvedness.end());
-	const auto median_it = log_norm_curvedness.begin() + log_norm_curvedness.size() * 0.65;//0.65 good for fine segmentation  //0.5 good for detecting intact vs fractured when removing region merging 
+	const auto median_it = log_norm_curvedness.begin() + log_norm_curvedness.size() * fracture;//0.65 good for fine segmentation  //0.5 good for detecting intact vs fractured when removing region merging 
 	std::nth_element(log_norm_curvedness.begin(), median_it, log_norm_curvedness.end());
 	return *median_it;
 }

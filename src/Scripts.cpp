@@ -82,7 +82,7 @@ void segment(std::vector<std::string> all_args)
 	fragment.load();
 
 	std::cout << "Start to segment" << std::endl;
-	double fracture = 0.65;
+	double fracture = 0.8;
 	double simThresh = fragment.getSimilarThreshByPos(fracture);
 	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 	std::vector<std::vector<int>> oRegionsList;
@@ -92,7 +92,7 @@ void segment(std::vector<std::string> all_args)
 
 	//std::vector<Segment> segments;
 	std::vector<Segment> segments; // make it call by reference
-	for (int iRegion = 0; iRegion < 30; iRegion++)
+	for (int iRegion = 0; iRegion < oRegionsList.size(); iRegion++)
 	{
 		Segment segment(oRegionsList[iRegion]);
 		segment.loadBasicData(fragment.m_VerticesAdjacentFacesList,
