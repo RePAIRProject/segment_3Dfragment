@@ -34,10 +34,26 @@ void ObjFragment::load()
 	igl::vertex_triangle_adjacency(m_Vertices, m_Faces, m_VerticesAdjacentFacesList, _);
 
 
-	Eigen::MatrixXd pd1, pd2;
+	/*Eigen::MatrixXd pd1, pd2;
 	Eigen::VectorXd pv1, pv2;
 	igl::principal_curvature(m_Vertices, m_Faces, pd1, pd2, pv1, pv2);
 	m_MeshCurvedness = 0.5*(pv1.array().square() + pv2.array().square()).sqrt();
+
+	std::ofstream f("..\\fragments\\group_39\\processed\\RPf_00320_curvedness.txt");
+	for (int i = 0; i < m_MeshCurvedness.rows(); ++i) {
+		f << m_MeshCurvedness(i) << '\n';
+	}*/
+
+	std::cout << "Warning you read the curvedness HARDCODED" << std::endl;
+	m_MeshCurvedness.resize(m_Vertices.rows());
+	std::ifstream input("..\\fragments\\group_39\\processed\\RPf_00320_curvedness.txt");
+	int i = 0;
+	for (std::string line; getline(input, line); )
+	{
+		m_MeshCurvedness(i) = std::stod(line);
+		++i;
+	}
+
 
 	Eigen::MatrixXd curvednessLog = m_MeshCurvedness.array().log();
 	//m_NormedMeshCurvedness = 
@@ -61,29 +77,6 @@ void ObjFragment::load()
 	
 
 
-	/*
-	//In the future if we will want to reload curvedness quicker
-	
-	std::ofstream f("..\\fragments\\RPf_00154\\curvedness.txt");
-	for (int i = 0 ; i < m_MeshCurvedness.rows(); ++i) {
-		f << m_MeshCurvedness(i) << '\n';
-	}
-
-
-	/*m_MeshCurvedness.resize(m_Vertices.rows());
-	// read here from file to m_MeshCurvedness
-
-	
-	m_MeshCurvedness.resize(m_Vertices.rows());
-	//read here from file to m_MeshCurvedness
-
-	std::ifstream input("..\\fragments\\RPf_00154\\curvedness.txt");
-	int i = 0;
-	for (std::string line; getline(input, line); )
-	{
-		m_MeshCurvedness(i) = std::stod(line);
-		++i;
-	}*/
 	
 }
 
