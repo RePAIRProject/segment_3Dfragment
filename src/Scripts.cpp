@@ -82,13 +82,86 @@ void segment(std::vector<std::string> all_args)
 	fragment.load();
 
 	std::cout << "Start to segment" << std::endl;
-	double fracture = 0.8;
+	double fracture = 0.5;
 	double simThresh = fragment.getSimilarThreshByPos(fracture);
 	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
 	fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
 
+	Visualizer visualizer;
+	std::map<int, Eigen::RowVector3d> meshColors;
+	visualizer.generateRandomColors(meshColors, oRegionsList.size());
+
+	Eigen::MatrixXd segmentColors; 
+	segmentColors.resize(fragment.m_Vertices.rows(),4);
+	auto colorIt = meshColors.begin();
+
+	for (int iRegion = 0; iRegion < oRegionsList.size(); iRegion++)
+	{
+		std::vector<int> regionVerticesIndx = oRegionsList[iRegion];
+		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
+		{
+			segmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+		}
+		++colorIt;
+	}
+
+
+
+	/*
+	
+		Start mergnig algo - you can put it in other function when refactor
+	*/
+
+	double minSegPercSize = 0.005; // This need to get as a parameter to the script
+	std::map<int, Segment> smallSegments;
+	std::map<int, Segment> bigSegments;
+	std::map<int, double> segmentsAvgCurvedness; // We avg? maybe std is a parameter we should consider
+	std::map<int, int> vertIndex2SegIndex;
+	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
+
+	for (int iSeg = 0; iSeg < oRegionsList.size(); iSeg++)
+	{
+		auto segVertsIndexes = oRegionsList[iSeg];
+		Segment currSeg(segVertsIndexes);
+		segmentsAvgCurvedness.insert({ iSeg,fragment.localCurvedness(segVertsIndexes) });
+		double segmentSize = static_cast<double>(currSeg.piece_vertices_index_.size());
+		if (segmentSize/fragmentSize < minSegPercSize){
+			smallSegments.insert({ iSeg, currSeg });
+		}
+		else
+		{
+			bigSegments.insert({ iSeg, currSeg });
+		}
+
+		for (int iVert = 0; iVert < segVertsIndexes.size(); iVert++)
+		{
+			vertIndex2SegIndex.insert({ segVertsIndexes[iVert],iSeg });
+		}
+
+	}
+
+
+	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, segmentColors);// meshColors[0] //segmentColors
+	visualizer.m_Viewer.callback_key_down =
+		[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
+	{
+
+		switch (key) {
+		case '1': // for debug
+			visualizer.m_Viewer.data().set_colors(meshColors[0]);
+			std::cout << "Pressed 1" << std::endl;
+			break;
+		case '2': // for debug
+			// before merging
+			visualizer.m_Viewer.data().set_colors(segmentColors);
+			std::cout << "Pressed 2" << std::endl;
+			break;
+		}
+		return false;
+	};
+	visualizer.launch();
 
 	//std::vector<Segment> segments;
 	//std::vector<Segment> segments; // make it call by reference
@@ -100,55 +173,4 @@ void segment(std::vector<std::string> all_args)
 	//		fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals);
 	//	segments.push_back(segment);
 	//}
-
-
-	Visualizer visualizer;
-	std::map<int, Eigen::RowVector3d> meshColors;
-	visualizer.generateRandomColors(meshColors, oRegionsList.size());
-
-	Eigen::MatrixXd segmentColors; 
-	//segmentColors.resizeLike(fragment.m_Vertices);
-	segmentColors.resize(fragment.m_Vertices.rows(),4);
-
-	//segmentColors = Eigen::MatrixXd::Zero(fragment.m_Colors.rows(), fragment.m_Colors.cols());
-	auto colorIt = meshColors.begin();
-	for (int iRegion = 0; iRegion < oRegionsList.size(); iRegion++)
-	{
-		std::vector<int> regionVerticesIndx = oRegionsList[iRegion];
-		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
-		{
-			/*for (int rgb = 0; rgb < 3; rgb++)
-			{
-				double rgbVal = colorIt->second.coeff(rgb);
-				segmentColors(regionVerticesIndx[iVert], rgb) =rgbVal;
-			}*/
-			segmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
-		}
-		++colorIt;
-	}
-
-
-	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, segmentColors);// meshColors[0] //segmentColors
-	/*visualizer.m_Viewer.data().set_mesh(fragment.m_Vertices, fragment.m_Faces);
-	visualizer.m_Viewer.data().set_colors(stam);*/
-	//visualizer.m_Viewer.data().set_data(stam);
-
-	visualizer.m_Viewer.callback_key_down =
-		[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
-	{
-
-		switch (key) {
-		case '1': // for debug
-			visualizer.m_Viewer.data().set_colors(meshColors[0]);
-			std::cout << "Pressed 1" << std::endl;
-			break;
-		case '2': // for debug
-			//visualizer.m_Viewer.data_list[0].set_mesh(fragment.m_Vertices, fragment.m_Faces);
-			visualizer.m_Viewer.data().set_colors(segmentColors);
-			std::cout << "Pressed 2" << std::endl;
-			break;
-		}
-		return false;
-	};
-	visualizer.launch();
 }

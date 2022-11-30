@@ -167,75 +167,6 @@ int ObjFragment::findIntactSegmentIndex(std::vector<Segment>& segments)
 	return chosenIndex;
 }
 
-// Todo : return Segment
-//void 
-//void ObjFragment::extractIntactSurface(Segment &oIntactSurface, std::vector<Segment> &segments)
-//{
-//	
-//	
-//
-//	oIntactSurface = segments[chosenIndex];
-//
-//		std::set<int> uniqueVerticesIndexes;
-//		std::set<int> uniqueFacesIndexes;
-//		for (int vertexIndex : oIntactSurface.piece_vertices_index_)
-//		{
-//			//int  = oIntactSurface.piece_vertices_index_[i];
-//			//uniqueVerticesIndexes.insert(vertexIndex);
-//			for (int faceIndex : m_VerticesAdjacentFacesList[vertexIndex])
-//			{
-//				uniqueFacesIndexes.insert(faceIndex);
-//
-//				for (auto j = 0; j < m_Faces.cols(); j++)
-//				{
-//					uniqueVerticesIndexes.insert(m_Faces.coeff(faceIndex, j));
-//				}
-//			}
-//		}
-//
-//		std::vector<int> FragfacesIndexes_;
-//		std::copy(uniqueFacesIndexes.begin(), uniqueFacesIndexes.end(), std::back_inserter(FragfacesIndexes_));
-//		std::vector<int>FragVertIndexes_;
-//		std::copy(uniqueVerticesIndexes.begin(), uniqueVerticesIndexes.end(), std::back_inserter(FragVertIndexes_));
-//
-//		int nSize= FragVertIndexes_.size();
-//		oIntactSurface.m_Vertices.resize(nSize, 3);
-//		std::map<int, int> VertIndex2SegIndex;
-//
-//		int i = 0;
-//		for (int vertexIndex : FragVertIndexes_)
-//		{
-//			VertIndex2SegIndex.insert({ vertexIndex,i });
-//			for (int j = 0; j < 3; ++j)
-//				oIntactSurface.m_Vertices(i, j) = m_Vertices(vertexIndex, j);
-//
-//			i++;
-//		}
-//		
-//		oIntactSurface.m_Faces.resize(FragfacesIndexes_.size(), 3);
-//		Eigen::MatrixXi FTC,FN;
-//		oIntactSurface.m_Faces2Normals.resize(FragfacesIndexes_.size(), 3);
-//		oIntactSurface.m_Faces2TextureCoordinates.resize(FragfacesIndexes_.size(), 3);
-//
-//		i = 0;
-//		for (int ixFragfaces : FragfacesIndexes_)
-//		{
-//			for (int j = 0; j < 3; ++j)
-//			{
-//				int fragVertIndex = m_Faces(ixFragfaces, j);
-//				oIntactSurface.m_Faces(i, j) = VertIndex2SegIndex[fragVertIndex];
-//
-//				fragVertIndex = m_Faces2TextureCoordinates(ixFragfaces, j);
-//				oIntactSurface.m_Faces2TextureCoordinates(i, j) = fragVertIndex; //VertIndex2SegIndex[fragVertIndex];
-//				
-//				fragVertIndex = m_Faces2Normals(ixFragfaces, j);
-//				oIntactSurface.m_Faces2Normals(i, j) = fragVertIndex; //VertIndex2SegIndex[fragVertIndex];
-//
-//			}
-//			++i;
-//		}
-//
-//}
 
 void ObjFragment::grow_current_region(std::map<int, double>& available_curves, std::unordered_map<int, int>& current_region, std::unordered_map<int, int>& current_region_boundary_neighbors, std::vector<int> current_seeds, int min_curvature_index, double segment_threshold_value)
 {
@@ -282,20 +213,23 @@ void ObjFragment::grow_current_region(std::map<int, double>& available_curves, s
 }
 
 
+
+
+// consider to move this code to the script (segment_intact_surface function)
 void ObjFragment::filterSmallRegions(std::vector<Segment> &segments,std::vector<std::vector<int>> &regions_list_)
 {
-	Eigen::MatrixXd vertices_with_region_indication = m_Vertices;
-	std::map<int, std::vector<int>> merged_regions_list;
+	//Eigen::MatrixXd vertices_with_region_indication = m_Vertices;
+	//std::map<int, std::vector<int>> merged_regions_list;
 	std::map<int, std::vector<int>> small_regions;
-	vertices_with_region_indication.conservativeResize(Eigen::NoChange, m_Vertices.cols() + 1);
-	const auto region_index_column = vertices_with_region_indication.cols() - 1;
+	//vertices_with_region_indication.conservativeResize(Eigen::NoChange, m_Vertices.cols() + 1);
+	//const auto region_index_column = vertices_with_region_indication.cols() - 1;
 
 	double minimal_segment_area_percent = 0.05;
 
-	const auto NO_INPUT = -1;
+	//const auto NO_INPUT = -1;
 	for (auto i = 0; i < regions_list_.size(); i++)
 	{
-		merged_regions_list[i] = regions_list_[i];
+		//merged_regions_list[i] = regions_list_[i];
 		if ((static_cast<double>(regions_list_[i].size()) / static_cast<double>(m_Vertices.rows())) <= minimal_segment_area_percent)
 		{
 			small_regions[i] = regions_list_[i];
@@ -306,11 +240,10 @@ void ObjFragment::filterSmallRegions(std::vector<Segment> &segments,std::vector<
 			segments.push_back(current);
 			//segmented_regions_.push_back(current);
 		}
-
-
 	}
-
 }
+
+
 
 
 void ObjFragment::saveAsObj(std::string outputPath, Segment &iSegment)
@@ -357,3 +290,14 @@ void ObjFragment::saveAsObj(std::string outputPath, Segment &iSegment)
 	std::filesystem::remove(tmpFilePath);
 }
 
+
+double ObjFragment::localCurvedness(const std::vector<int>& vertIndexes)
+{
+	double sum = 0;
+	for (int i = 0; i < vertIndexes.size(); i++)
+	{
+		sum += m_MeshCurvedness[vertIndexes[i]];
+	}
+
+	return sum / vertIndexes.size();
+}
