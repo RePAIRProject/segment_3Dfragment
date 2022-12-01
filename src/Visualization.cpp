@@ -1,4 +1,6 @@
 #include <Visualization.h>
+#include <igl/writeOFF.h>
+#include <string>
 
 Visualizer::Visualizer()
 {
@@ -23,6 +25,12 @@ int Visualizer::appendMesh(const Eigen::MatrixXd& vertices, const Eigen::MatrixX
 
 	return segID;
 }
+
+void Visualizer::writeOFF(std::string fileName,Eigen::MatrixXd V, Eigen::MatrixXi F, Eigen::MatrixXd C)
+{
+	igl::writeOFF(fileName,V, F, C);
+}
+
 
 void Visualizer::launch()
 {

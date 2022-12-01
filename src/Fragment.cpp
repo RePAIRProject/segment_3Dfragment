@@ -301,3 +301,17 @@ double ObjFragment::localCurvedness(const std::vector<int>& vertIndexes)
 
 	return sum / vertIndexes.size();
 }
+
+Eigen::Vector3d ObjFragment::localAvgNormal(const std::vector<int>& vertIndexes)
+{
+	Eigen::Vector3d sum = Eigen::Vector3d::Zero();
+	for (auto iVert: vertIndexes)
+	{
+		for (int i = 0; i <3; i++)
+		{
+			sum[i] += m_Normals.coeff(iVert, i);
+		}
+	}
+
+	return sum / vertIndexes.size();
+}

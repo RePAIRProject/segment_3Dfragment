@@ -38,6 +38,7 @@ public:
 	void saveAsObj(std::string outputPath, Segment& iSegment);
 
 	double localCurvedness(const std::vector<int> &vertIndexes);
+	Eigen::Vector3d localAvgNormal(const std::vector<int>& vertIndexes);
 };
 
 
