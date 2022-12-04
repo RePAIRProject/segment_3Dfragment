@@ -82,7 +82,7 @@ void segment(std::vector<std::string> all_args)
 	fragment.load();
 
 	std::cout << "Start to segment" << std::endl;
-	double fracture = 0.5;
+	double fracture = 0.45; //0.5
 	double simThresh = fragment.getSimilarThreshByPos(fracture);
 	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 	std::vector<std::vector<int>> oRegionsList;
@@ -117,7 +117,7 @@ void segment(std::vector<std::string> all_args)
 	/*
 	* init data structures
 	*/
-	double minSegPercSize = 0.005; // This need to get as a parameter to the script
+	double minSegPercSize = 0.000125;//0.005 // This need to get as a parameter to the script
 	std::map<int, Segment> smallSegments;
 	std::map<int, Segment> bigSegments;
 	std::map<int, double> segmentsAvgCurvedness; // We avg? maybe std is a parameter we should consider
@@ -152,8 +152,8 @@ void segment(std::vector<std::string> all_args)
 		Coloring
 	*/
 
-	Eigen::MatrixXd segmentBigSmallColors;
-	segmentBigSmallColors.resize(fragment.m_Vertices.rows(), 4);
+	Eigen::MatrixXd bigSegmentColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	//segmentBigSmallColors.resize(fragment.m_Vertices.rows(), 4);
 	colorIt = meshColors.begin();
 
 	for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
@@ -161,54 +161,21 @@ void segment(std::vector<std::string> all_args)
 		std::vector<int> regionVerticesIndx = oRegionsList[bigSegIt->first];
 		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
 		{
-			segmentBigSmallColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+			bigSegmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
 		}
-
-		if (colorIt == std::next(meshColors.begin(), 1))
-		{
-			colorIt = meshColors.begin();
-		}
-		else 
-		{
-			++colorIt;
-		}
+		colorIt++;
 	}
 
-	colorIt = meshColors.begin();
-
-	for (auto smallSegIt = smallSegments.begin(); smallSegIt != smallSegments.end(); smallSegIt++)
-	{
-		std::vector<int> regionVerticesIndx = oRegionsList[smallSegIt->first];
-		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
-		{
-			segmentBigSmallColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
-		}
-		++colorIt;
-	}
-
-	/*
-		Find the neighboorhod segments of the current segment
-	*/
-	//std::map<int, std::set<int>> seg2BigNeigh;
-	//std::map<int, std::set<int>> seg2SmallNeigh;
-	//std::map<int, std::set<int>>* smallOrBigMap;
-	/*std::set<int> ixCurrSegBigNeigh;
-	std::set<int> ixCurrSegSmallNeigh;
-
-
-	for (auto smallSegIt = smallSegments.begin(); smallSegIt != smallSegments.end(); smallSegIt++)
-	{
-		std::set<int> emptySet;
-		seg2BigNeigh.insert({ smallSegIt->first,emptySet });
-		seg2SmallNeigh.insert({ smallSegIt->first,emptySet });
-	}*/
 
 	std::set<int> ixCurrSegBigNeigh;
 	std::set<int> ixCurrSegSmallNeigh;
 	std::map<int, int> segSrc2segDst; // The src seg that will be merge to dst seg
 
+	std::cout << "Start the merge process" << std::endl;
+
 	while (!smallSegments.empty())
 	{
+		std::cout << smallSegments.size() << " small segments remained to be merged" << std::endl;
 		for (auto smallSegIt = smallSegments.begin(); smallSegIt != smallSegments.end(); smallSegIt++)
 		{
 			auto& iVertsAtBoundary = oRegionOutsideBoundaryVerticesList[smallSegIt->first];
@@ -221,20 +188,19 @@ void segment(std::vector<std::string> all_args)
 				int iNeighboorSeg = vertIndex2SegIndex[iVertBoundary];
 
 				// Identify wheter its a big or small segment
-				if (smallSegments.count(iNeighboorSeg) > 0)
+				if (bigSegments.count(iNeighboorSeg) > 0)
 				{
-					ixCurrSegSmallNeigh.insert(iNeighboorSeg);
+					ixCurrSegBigNeigh.insert(iNeighboorSeg);
 				}
 				else
 				{
-					ixCurrSegBigNeigh.insert(iNeighboorSeg);
+					ixCurrSegSmallNeigh.insert(iNeighboorSeg);
 				}
 			}
 
 			/*
 				Find the most similar in the big segments nieghbors
 			*/
-			bool isMerged = false;
 
 			
 			/*int iBigSegMostSim = -1;
@@ -251,8 +217,21 @@ void segment(std::vector<std::string> all_args)
 				}
 			}*/
 
+
+			/*for (std::set<int>::iterator itSmallNeigh = ixCurrSegSmallNeigh.begin(); itSmallNeigh != ixCurrSegSmallNeigh.end(); itSmallNeigh++)
+			{
+
+				double currDiff = abs(segmentsAvgCurvedness.at(*itSmallNeigh) - segmentsAvgCurvedness.at(smallSegIt->first));
+				if (currDiff < minCurvDiff)
+				{
+					iBigSegMostSim = *itSmallNeigh;
+					minCurvDiff = currDiff;
+				}
+			}*/
+
 			int iBigSegMostSim = -1;
 			double maxInnerProd = -2; // The vectors should be normalized
+			//double minCurvDiff = 99999;
 
 			for (std::set<int>::iterator itBigNeigh = ixCurrSegBigNeigh.begin(); itBigNeigh != ixCurrSegBigNeigh.end(); itBigNeigh++)
 			{
@@ -265,16 +244,16 @@ void segment(std::vector<std::string> all_args)
 				}
 			}
 
-			for (std::set<int>::iterator itSmallNeigh = ixCurrSegSmallNeigh.begin(); itSmallNeigh != ixCurrSegSmallNeigh.end(); itSmallNeigh++)
-			{
+			//for (std::set<int>::iterator itSmallNeigh = ixCurrSegSmallNeigh.begin(); itSmallNeigh != ixCurrSegSmallNeigh.end(); itSmallNeigh++)
+			//{
 
-				double currInnerProd = segmentsAvgNormal.at(*itSmallNeigh).dot(segmentsAvgNormal.at(smallSegIt->first));
-				if (currInnerProd > maxInnerProd)
-				{
-					iBigSegMostSim = *itSmallNeigh;
-					maxInnerProd = currInnerProd;
-				}
-			}
+			//	double currInnerProd = segmentsAvgNormal.at(*itSmallNeigh).dot(segmentsAvgNormal.at(smallSegIt->first));
+			//	if (currInnerProd > maxInnerProd)
+			//	{
+			//		iBigSegMostSim = *itSmallNeigh;
+			//		maxInnerProd = currInnerProd;
+			//	}
+			//}
 
 			if (iBigSegMostSim != -1)
 			{
@@ -308,11 +287,11 @@ void segment(std::vector<std::string> all_args)
 				);
 			}
 			else {
-				smallSegments.at(iDstSeg).piece_vertices_index_.insert(
+				/*smallSegments.at(iDstSeg).piece_vertices_index_.insert(
 					smallSegments.at(iDstSeg).piece_vertices_index_.end(),
 					smallSegments.at(iSrcSeg).piece_vertices_index_.begin(),
 					smallSegments.at(iSrcSeg).piece_vertices_index_.end()
-				);
+				);*/
 			}
 			
 
@@ -326,11 +305,11 @@ void segment(std::vector<std::string> all_args)
 
 		for (std::map<int, int>::iterator itSrc2Dst = segSrc2segDst.begin(); itSrc2Dst != segSrc2segDst.end(); ++itSrc2Dst)
 		{
-			auto currSeg = &smallSegments.at(itSrc2Dst->first);
+			/*auto currSeg = &smallSegments.at(itSrc2Dst->first);
 			double segmentSize = static_cast<double>(currSeg->piece_vertices_index_.size());
 			if (segmentSize / fragmentSize > minSegPercSize) {
 				bigSegments.insert({ itSrc2Dst->first ,*currSeg });
-			}
+			}*/
 			smallSegments.erase(itSrc2Dst->first);
 		}
 		segSrc2segDst.clear();
@@ -367,18 +346,19 @@ void segment(std::vector<std::string> all_args)
 		case '2': // for debug
 			// before merging
 			visualizer.m_Viewer.data().set_colors(segmentColors);
-			std::cout << "Pressed 2" << std::endl;
+			std::cout << "Pressed 2, present the small and big regions before merge" << std::endl;
 			//visualizer.writeOFF("beforeMerge.off", fragment.m_Vertices, fragment.m_Faces, segmentColors.block(0,0, segmentColors.rows(),3));
 			break;
 		case '3': // for debug
 			// before merging
-			visualizer.m_Viewer.data().set_colors(segmentBigSmallColors);
-			std::cout << "Pressed 3" << std::endl;
+			// Only big segments
+			visualizer.m_Viewer.data().set_colors(bigSegmentColors);
+			std::cout << "Pressed 3, present only the big segments" << std::endl;
 			break;
 		case '4': // for debug
 			// before merging
 			visualizer.m_Viewer.data().set_colors(segmentColorsAfterMerge);
-			std::cout << "Pressed 4" << std::endl;
+			std::cout << "Pressed 4, present the mesh after merging" << std::endl;
 			//visualizer.writeOFF("byNormals.off", fragment.m_Vertices, fragment.m_Faces, segmentColorsAfterMerge.block(0, 0, segmentColors.rows(), 3));
 			break;
 		}
