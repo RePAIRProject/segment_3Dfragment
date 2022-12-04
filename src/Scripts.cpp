@@ -350,13 +350,11 @@ void segment(std::vector<std::string> all_args)
 			//visualizer.writeOFF("beforeMerge.off", fragment.m_Vertices, fragment.m_Faces, segmentColors.block(0,0, segmentColors.rows(),3));
 			break;
 		case '3': // for debug
-			// before merging
 			// Only big segments
 			visualizer.m_Viewer.data().set_colors(bigSegmentColors);
 			std::cout << "Pressed 3, present only the big segments" << std::endl;
 			break;
 		case '4': // for debug
-			// before merging
 			visualizer.m_Viewer.data().set_colors(segmentColorsAfterMerge);
 			std::cout << "Pressed 4, present the mesh after merging" << std::endl;
 			//visualizer.writeOFF("byNormals.off", fragment.m_Vertices, fragment.m_Faces, segmentColorsAfterMerge.block(0, 0, segmentColors.rows(), 3));
