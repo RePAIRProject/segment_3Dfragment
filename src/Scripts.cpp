@@ -93,7 +93,7 @@ void segment(std::vector<std::string> all_args)
 	std::map<int, Eigen::RowVector3d> meshColors;
 	visualizer.generateRandomColors(meshColors, oRegionsList.size());
 
-	Eigen::MatrixXd segmentColors; 
+	/*Eigen::MatrixXd segmentColors; 
 	segmentColors.resize(fragment.m_Vertices.rows(),4);
 	auto colorIt = meshColors.begin();
 
@@ -105,7 +105,7 @@ void segment(std::vector<std::string> all_args)
 			segmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
 		}
 		++colorIt;
-	}
+	}*/
 
 
 
@@ -161,8 +161,10 @@ void segment(std::vector<std::string> all_args)
 	*/
 
 	Eigen::MatrixXd bigSegmentColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	Eigen::MatrixXd rawSegmentColors;
+	rawSegmentColors.resize(fragment.m_Vertices.rows(), 4);
 	//segmentBigSmallColors.resize(fragment.m_Vertices.rows(), 4);
-	colorIt = meshColors.begin();
+	auto colorIt = meshColors.begin();
 
 	for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
 	{
@@ -170,6 +172,17 @@ void segment(std::vector<std::string> all_args)
 		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
 		{
 			bigSegmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+			rawSegmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+		}
+		colorIt++;
+	}
+
+	for (auto smallSegIt = smallSegments.begin(); smallSegIt != smallSegments.end(); smallSegIt++)
+	{
+		std::vector<int> regionVerticesIndx = oRegionsList[smallSegIt->first];
+		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
+		{
+			rawSegmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
 		}
 		colorIt++;
 	}
@@ -178,14 +191,15 @@ void segment(std::vector<std::string> all_args)
 	std::set<int> ixCurrSegBigNeigh;
 	std::set<int> ixCurrSegSmallNeigh;
 	std::map<int, int> segSrc2segDst; // The src seg that will be merge to dst seg
+	std::map<int, std::vector<int>> segSrc2MultiDst;
 
 	std::cout << "Start the merge process" << std::endl;
 	int nLastFreeDebug = -1;
 	int debugIter = 0;
-	while (!freeVertIndexes.empty()) //(debugIter++<2)
+	while (debugIter++ < 1) //(!smallSegments.empty())
 	{
 		debugIter++;
-		if (nLastFreeDebug == freeVertIndexes.size())
+		if (nLastFreeDebug == smallSegments.size())
 		{
 			std::cout << "WARNING: merge did not converged after " << debugIter << " iterations" << std::endl;
 			break;
@@ -199,97 +213,85 @@ void segment(std::vector<std::string> all_args)
 			/*
 				Compute the neighboors segments
 			*/
-			for (int i = 0 ; i< iVertsAtBoundary.size(); ++i)
+			for (int iVertBoundary = 0; iVertBoundary < iVertsAtBoundary.size(); iVertBoundary++)
 			{
-				
-				int iVertBoundary = iVertsAtBoundary[i];
-				/*for (int jVertAdjacent : fragment.m_adjacentVertices[iVertBoundary])
-				{*/
+				int iNeighboorSeg = vertIndex2SegIndex[iVertBoundary];
 
-					if (freeVertIndexes.count(iVertBoundary) > 0)
-					{
-
-						bigSegments.at(bigSegIt->first).piece_vertices_index_.push_back(iVertBoundary);
-						oRegionOutsideBoundaryVerticesList[bigSegIt->first].push_back(iVertBoundary);
-						vertIndex2SegIndex[iVertBoundary] = bigSegIt->first;
-						freeVertIndexes.erase(iVertBoundary);
-					}
-					else {
-						for (int j=0;j < fragment.m_adjacentVertices[iVertBoundary].size(); ++j)
-						{
-
-							int jVertAdjacent = fragment.m_adjacentVertices[iVertBoundary][j];
-
-							if (freeVertIndexes.count(jVertAdjacent) > 0)
-							{
-
-
-								bigSegments.at(bigSegIt->first).piece_vertices_index_.push_back(jVertAdjacent);
-								oRegionOutsideBoundaryVerticesList[bigSegIt->first].push_back(jVertAdjacent);
-								vertIndex2SegIndex[jVertAdjacent] = bigSegIt->first;
-								freeVertIndexes.erase(jVertAdjacent);
-							}
-						}
-					}
-				//}
-
-
+				// Identify wheter its a big or small segment
+				if (bigSegments.count(iNeighboorSeg) > 0)
+				{
+					ixCurrSegBigNeigh.insert(iNeighboorSeg);
+				}
+				else
+				{
+					ixCurrSegSmallNeigh.insert(iNeighboorSeg);
+				}
 			}
+
+			for (std::set<int>::iterator itSmallNeigh = ixCurrSegSmallNeigh.begin(); itSmallNeigh != ixCurrSegSmallNeigh.end(); itSmallNeigh++)
+			{
+
+				segSrc2segDst[*itSmallNeigh] = bigSegIt->first;
+				//segSrc2segDst.insert({ *itSmallNeigh,bigSegIt->first});
+				//segSrc2MultiDst[*itSmallNeigh].push_back
+			}
+			
 
 			
 		}
 
 		//std::cout << "before applying the merging" << std::endl;
-		///*
-		//	Merging
-		//*/
-		//for (std::map<int,int>::iterator itSegSrc2Dst = segSrc2segDst.begin(); itSegSrc2Dst !=segSrc2segDst.end();++itSegSrc2Dst)
-		//{
-		//	int iSrcSeg = itSegSrc2Dst->first;
-		//	int iDstSeg = itSegSrc2Dst->second;
+		/*
+			Merging
+		*/
+		for (std::map<int,int>::iterator itSegSrc2Dst = segSrc2segDst.begin(); itSegSrc2Dst !=segSrc2segDst.end();++itSegSrc2Dst)
+		{
+			int iSrcSeg = itSegSrc2Dst->first;
+			int iDstSeg = itSegSrc2Dst->second;
 
-		//	// if it still didnot assigned (the neighboorhood around other big segments haven't change 
-		//	// (This is tfira fix data structure when poc works..
-		//	if (smallSegments.count(iSrcSeg) > 0)
-		//	{
-
-
-		//		for (int iVert = 0; iVert < smallSegments.at(iSrcSeg).piece_vertices_index_.size(); iVert++)
-		//		{
-		//			vertIndex2SegIndex[iVert] = iDstSeg;
-		//		}
-
-		//		if (bigSegments.count(iDstSeg) > 0)
-		//		{
-		//			bigSegments.at(iDstSeg).piece_vertices_index_.insert(
-		//				bigSegments.at(iDstSeg).piece_vertices_index_.end(),
-		//				smallSegments.at(iSrcSeg).piece_vertices_index_.begin(),
-		//				smallSegments.at(iSrcSeg).piece_vertices_index_.end()
-		//			);
-		//		}
-		//		else {
-		//			std::cout << "You should not be here";
-		//		}
+			
+			if (smallSegments.count(iSrcSeg) > 0)
+			{
 
 
-		//		oRegionOutsideBoundaryVerticesList[iDstSeg].insert(
-		//			oRegionOutsideBoundaryVerticesList[iDstSeg].end(),
-		//			oRegionOutsideBoundaryVerticesList[iSrcSeg].begin(),
-		//			oRegionOutsideBoundaryVerticesList[iSrcSeg].end()
-		//		);
-		//	}
-		//}
+				for (int iVert = 0; iVert < smallSegments.at(iSrcSeg).piece_vertices_index_.size(); iVert++)
+				{
+					vertIndex2SegIndex[smallSegments.at(iSrcSeg).piece_vertices_index_[iVert]] = iDstSeg;
+				}
 
-		//for (std::map<int, int>::iterator itSrc2Dst = segSrc2segDst.begin(); itSrc2Dst != segSrc2segDst.end(); ++itSrc2Dst)
-		//{
-		//	/*auto currSeg = &smallSegments.at(itSrc2Dst->first);
-		//	double segmentSize = static_cast<double>(currSeg->piece_vertices_index_.size());
-		//	if (segmentSize / fragmentSize > minSegPercSize) {
-		//		bigSegments.insert({ itSrc2Dst->first ,*currSeg });
-		//	}*/
-		//	smallSegments.erase(itSrc2Dst->first);
-		//}
-		//segSrc2segDst.clear();
+				if (bigSegments.count(iDstSeg) > 0)
+				{
+					bigSegments.at(iDstSeg).piece_vertices_index_.insert(
+						bigSegments.at(iDstSeg).piece_vertices_index_.end(),
+						smallSegments.at(iSrcSeg).piece_vertices_index_.begin(),
+						smallSegments.at(iSrcSeg).piece_vertices_index_.end()
+					);
+
+					oRegionOutsideBoundaryVerticesList[iDstSeg].insert(
+						oRegionOutsideBoundaryVerticesList[iDstSeg].end(),
+						oRegionOutsideBoundaryVerticesList[iSrcSeg].begin(),
+						oRegionOutsideBoundaryVerticesList[iSrcSeg].end()
+					);
+				}
+				else {
+					std::cout << "You should not be here";
+				}
+
+			}
+			
+			
+		}
+
+		for (std::map<int, int>::iterator itSrc2Dst = segSrc2segDst.begin(); itSrc2Dst != segSrc2segDst.end(); ++itSrc2Dst)
+		{
+			/*auto currSeg = &smallSegments.at(itSrc2Dst->first);
+			double segmentSize = static_cast<double>(currSeg->piece_vertices_index_.size());
+			if (segmentSize / fragmentSize > minSegPercSize) {
+				bigSegments.insert({ itSrc2Dst->first ,*currSeg });
+			}*/
+			smallSegments.erase(itSrc2Dst->first);
+		}
+		segSrc2segDst.clear();
 	}
 	
 	/*
@@ -330,7 +332,7 @@ void segment(std::vector<std::string> all_args)
 	}
 
 
-	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, segmentColors);// meshColors[0] //segmentColors
+	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, rawSegmentColors);// meshColors[0] //segmentColors
 	visualizer.m_Viewer.callback_key_down =
 		[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
 	{
@@ -342,7 +344,7 @@ void segment(std::vector<std::string> all_args)
 			break;
 		case '2': // for debug
 			// before merging
-			visualizer.m_Viewer.data().set_colors(segmentColors);
+			visualizer.m_Viewer.data().set_colors(rawSegmentColors);
 			std::cout << "Pressed 2, present the small and big regions before merge" << std::endl;
 			//visualizer.writeOFF("beforeMerge.off", fragment.m_Vertices, fragment.m_Faces, segmentColors.block(0,0, segmentColors.rows(),3));
 			break;
