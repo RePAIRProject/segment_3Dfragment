@@ -184,9 +184,10 @@ void segment(std::vector<std::string> all_args)
 	int debugIter = 0;
 	while (!freeVertIndexes.empty()) //(debugIter++<2)
 	{
+		debugIter++;
 		if (nLastFreeDebug == freeVertIndexes.size())
 		{
-			std::cout << "WARNING: merge did not converged" << std::endl;
+			std::cout << "WARNING: merge did not converged after " << debugIter << " iterations" << std::endl;
 			break;
 		}
 		std::cout << freeVertIndexes.size() << " free vertices remained to be merged" << std::endl;
@@ -213,7 +214,7 @@ void segment(std::vector<std::string> all_args)
 						vertIndex2SegIndex[iVertBoundary] = bigSegIt->first;
 						freeVertIndexes.erase(iVertBoundary);
 					}
-					/*else {
+					else {
 						for (int j=0;j < fragment.m_adjacentVertices[iVertBoundary].size(); ++j)
 						{
 
@@ -229,7 +230,7 @@ void segment(std::vector<std::string> all_args)
 								freeVertIndexes.erase(jVertAdjacent);
 							}
 						}
-					}*/
+					}
 				//}
 
 
