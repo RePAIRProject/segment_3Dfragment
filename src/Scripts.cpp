@@ -166,7 +166,8 @@ void segment(std::vector<std::string> all_args)
 	Eigen::MatrixXd bigSegmentColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 
 	auto colorIt = meshColors.begin();
-	for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug + 1); bigSegIt++)
+	//for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug + 1); bigSegIt++)
+	for (auto bigSegIt = bigSegments.begin(); bigSegIt !=bigSegments.end(); bigSegIt++)
 	{
 		std::vector<int> regionVerticesIndx = oRegionsList[bigSegIt->first];
 		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
@@ -216,7 +217,7 @@ void segment(std::vector<std::string> all_args)
 	int nLastFreeDebug = -1;
 	int debugIter = 0;
 	std::cout << "WARNING: you run only one iteration" << std::endl;
-	while (debugIter++ < 1) //(!smallSegments.empty())
+	while (!smallSegments.empty()) //debugIter++ < 1()
 	{
 		debugIter++;
 		if (nLastFreeDebug == smallSegments.size())
@@ -228,7 +229,8 @@ void segment(std::vector<std::string> all_args)
 		nLastFreeDebug = freeVertIndexes.size();
 
 		std::cout << "WARNING: merge only for a single big segment" << std::endl;
-		for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug+1); bigSegIt++)//bigSegments.end()
+		//for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug+1); bigSegIt++)//bigSegments.end()
+		for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)//bigSegments.end()
 		{
 			auto& iVertsAtBoundary = oRegionOutsideBoundaryVerticesList[bigSegIt->first];
 			
@@ -259,7 +261,8 @@ void segment(std::vector<std::string> all_args)
 			}
 			
 
-			
+			ixCurrSegBigNeigh.clear();
+			ixCurrSegSmallNeigh.clear();
 		}
 
 		//std::cout << "before applying the merging" << std::endl;
@@ -324,7 +327,8 @@ void segment(std::vector<std::string> all_args)
 	colorIt = meshColors.begin();
 
 	std::cout << "WARNING: You present the merge only for a single big segment" << std::endl;
-	for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug + 1); bigSegIt++)
+	//for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug + 1); bigSegIt++)
+	for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
 	{
 		std::vector<int> regionVerticesIndx = bigSegIt->second.piece_vertices_index_;
 		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
