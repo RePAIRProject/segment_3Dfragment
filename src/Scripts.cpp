@@ -235,7 +235,7 @@ void segment(std::vector<std::string> all_args)
 			/*
 				Compute the neighboors segments
 			*/
-			for (int iVertBoundary = 0; iVertBoundary < iVertsAtBoundary.size(); iVertBoundary++)
+			for (int iVertBoundary : iVertsAtBoundary)
 			{
 				int iNeighboorSeg = vertIndex2SegIndex[iVertBoundary];
 
