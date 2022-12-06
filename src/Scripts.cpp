@@ -89,25 +89,6 @@ void segment(std::vector<std::string> all_args)
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
 	fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
 
-	Visualizer visualizer;
-	std::map<int, Eigen::RowVector3d> meshColors;
-	visualizer.generateRandomColors(meshColors, oRegionsList.size());
-
-	/*Eigen::MatrixXd segmentColors; 
-	segmentColors.resize(fragment.m_Vertices.rows(),4);
-	auto colorIt = meshColors.begin();
-
-	for (int iRegion = 0; iRegion < oRegionsList.size(); iRegion++)
-	{
-		std::vector<int> regionVerticesIndx = oRegionsList[iRegion];
-		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
-		{
-			segmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
-		}
-		++colorIt;
-	}*/
-
-
 
 	/*
 	
@@ -147,33 +128,71 @@ void segment(std::vector<std::string> all_args)
 		else
 		{
 			bigSegments.insert({ iSeg, currSeg });
+
 		}
 
-		for (int iVert = 0; iVert < segVertsIndexes.size(); iVert++)
+		for (int i = 0; i < segVertsIndexes.size(); i++)
 		{
-			vertIndex2SegIndex.insert({ segVertsIndexes[iVert],iSeg });
+			vertIndex2SegIndex.insert({ segVertsIndexes[i],iSeg });
 		}
 
 	}
 
 	/*
+		For debug
+	*/
+	int ixMaxSize_debug = -1;
+	double maxSizeSegment_debug = 0;
+	int k = 0;
+	for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
+	{
+		double segmentSize = static_cast<double>(bigSegIt->second.piece_vertices_index_.size());
+		if (segmentSize > maxSizeSegment_debug)
+		{
+			maxSizeSegment_debug = segmentSize;
+			ixMaxSize_debug = k;
+		}
+		++k;
+	}
+
+	/*
 		Coloring
 	*/
+	Visualizer visualizer;
+	std::map<int, Eigen::RowVector3d> meshColors;
+	visualizer.generateRandomColors(meshColors, oRegionsList.size());
+	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, meshColors[0]);
 
 	Eigen::MatrixXd bigSegmentColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+
+	auto colorIt = meshColors.begin();
+	for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug + 1); bigSegIt++)
+	{
+		std::vector<int> regionVerticesIndx = oRegionsList[bigSegIt->first];
+		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
+		{
+
+			bigSegmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+		}
+		++colorIt;
+	}
+
 	Eigen::MatrixXd rawSegmentColors;
 	rawSegmentColors.resize(fragment.m_Vertices.rows(), 4);
 	//segmentBigSmallColors.resize(fragment.m_Vertices.rows(), 4);
-	auto colorIt = meshColors.begin();
-
+	colorIt = meshColors.begin();
 	for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
 	{
 		std::vector<int> regionVerticesIndx = oRegionsList[bigSegIt->first];
 		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
 		{
-			bigSegmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+			//bigSegmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
 			rawSegmentColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+		
+			/*visualizer.m_Viewer.data().add_label(fragment.m_Vertices.row(regionVerticesIndx[iVert]),
+													std::to_string(bigSegIt->first));*/
 		}
+
 		colorIt++;
 	}
 
@@ -196,6 +215,7 @@ void segment(std::vector<std::string> all_args)
 	std::cout << "Start the merge process" << std::endl;
 	int nLastFreeDebug = -1;
 	int debugIter = 0;
+	std::cout << "WARNING: you run only one iteration" << std::endl;
 	while (debugIter++ < 1) //(!smallSegments.empty())
 	{
 		debugIter++;
@@ -206,7 +226,9 @@ void segment(std::vector<std::string> all_args)
 		}
 		std::cout << freeVertIndexes.size() << " free vertices remained to be merged" << std::endl;
 		nLastFreeDebug = freeVertIndexes.size();
-		for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
+
+		std::cout << "WARNING: merge only for a single big segment" << std::endl;
+		for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug+1); bigSegIt++)//bigSegments.end()
 		{
 			auto& iVertsAtBoundary = oRegionOutsideBoundaryVerticesList[bigSegIt->first];
 			
@@ -254,9 +276,9 @@ void segment(std::vector<std::string> all_args)
 			{
 
 
-				for (int iVert = 0; iVert < smallSegments.at(iSrcSeg).piece_vertices_index_.size(); iVert++)
+				for (int i = 0; i < smallSegments.at(iSrcSeg).piece_vertices_index_.size(); i++)
 				{
-					vertIndex2SegIndex[smallSegments.at(iSrcSeg).piece_vertices_index_[iVert]] = iDstSeg;
+					vertIndex2SegIndex[smallSegments.at(iSrcSeg).piece_vertices_index_[i]] = iDstSeg;
 				}
 
 				if (bigSegments.count(iDstSeg) > 0)
@@ -297,13 +319,14 @@ void segment(std::vector<std::string> all_args)
 	/*
 		Coloring
 	*/
-	Eigen::MatrixXd segmentColorsAfterMerge;
-	segmentColorsAfterMerge.resize(fragment.m_Vertices.rows(), 4);
+
+	Eigen::MatrixXd segmentColorsAfterMerge = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorIt = meshColors.begin();
 
-	for (auto it = bigSegments.begin(); it != bigSegments.end(); ++it)
+	std::cout << "WARNING: You present the merge only for a single big segment" << std::endl;
+	for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug + 1); bigSegIt++)
 	{
-		std::vector<int> regionVerticesIndx = it->second.piece_vertices_index_;
+		std::vector<int> regionVerticesIndx = bigSegIt->second.piece_vertices_index_;
 		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
 		{
 			segmentColorsAfterMerge.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
@@ -332,7 +355,7 @@ void segment(std::vector<std::string> all_args)
 	}
 
 
-	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, rawSegmentColors);// meshColors[0] //segmentColors
+	// meshColors[0] //segmentColors
 	visualizer.m_Viewer.callback_key_down =
 		[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
 	{
