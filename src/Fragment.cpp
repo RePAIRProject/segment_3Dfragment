@@ -291,7 +291,7 @@ void ObjFragment::saveAsObj(std::string outputPath, Segment &iSegment)
 }
 
 
-double ObjFragment::localCurvedness(const std::vector<int>& vertIndexes)
+double ObjFragment::localAvgCurvedness(const std::vector<int>& vertIndexes)
 {
 	double sum = 0;
 	for (int i = 0; i < vertIndexes.size(); i++)

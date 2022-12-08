@@ -112,7 +112,7 @@ void segment(std::vector<std::string> all_args)
 	{
 		auto segVertsIndexes = oRegionsList[iSeg];
 		Segment currSeg(segVertsIndexes);
-		segmentsAvgCurvedness.insert({ iSeg,fragment.localCurvedness(segVertsIndexes) });
+		segmentsAvgCurvedness.insert({ iSeg,fragment.localAvgCurvedness(segVertsIndexes) });
 		
 
 		double segmentSize = static_cast<double>(currSeg.piece_vertices_index_.size());
@@ -369,6 +369,7 @@ void segment(std::vector<std::string> all_args)
 
 	std::map<int, Eigen::Vector3d> segmentsAvgNormal;
 	std::map<int, double> segmentsSize;
+	std::map<int, double> segmentsCurvedness;
 	
 	for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
 	{
@@ -376,7 +377,9 @@ void segment(std::vector<std::string> all_args)
 		segmentsAvgNormal.insert(
 			{ bigSegIt->first, fragment.localAvgNormal(bigSegIt->second.piece_vertices_index_).normalized() }
 		);
+		
 	}
+
 
 	int iMostSimSegNeigh=-1;
 	double maxSim = -2;
