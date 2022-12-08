@@ -82,7 +82,7 @@ void segment(std::vector<std::string> all_args)
 	fragment.load();
 
 	std::cout << "Start to segment" << std::endl;
-	double fracture = 0.5; //0.45; //0.5
+	double fracture = 0.45; //0.45; //0.5
 	double simThresh = fragment.getSimilarThreshByPos(fracture);
 	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 	std::vector<std::vector<int>> oRegionsList;
@@ -98,7 +98,7 @@ void segment(std::vector<std::string> all_args)
 	/*
 	* init data structures
 	*/
-	double minSegPercSize = 0.000125;  //0.000125;//0.005 // This need to get as a parameter to the script
+	double minSegPercSize = 0.0025;  //0.000125;//0.005 // This need to get as a parameter to the script
 	std::map<int, Segment> smallSegments;
 	std::map<int, Segment> bigSegments;
 	std::map<int, double> segmentsAvgCurvedness; // We avg? maybe std is a parameter we should consider
@@ -396,7 +396,7 @@ void segment(std::vector<std::string> all_args)
 		std::cout << "Note: the intact surface is not the biggest: check the result of the segmentation" << std::endl;
 	}
 	
-	//finalSegSeedIndexes.push_back(iIntactSeg);
+	finalSegSeedIndexes.push_back(iIntactSeg);
 
 	/*
 		Find the seed of the opposite segment
@@ -415,7 +415,7 @@ void segment(std::vector<std::string> all_args)
 		}
 	}
 
-	//finalSegSeedIndexes.push_back(iOppositeSeg);
+	finalSegSeedIndexes.push_back(iOppositeSeg);
 
 
 	/*
@@ -423,16 +423,8 @@ void segment(std::vector<std::string> all_args)
 	*/
 	std::vector<int> sidewallsSegIndexes;
 	std::vector<double> wallsSegSimToIntact;
-	double eplisionOrthErr = 0.1;
-	/*std::map<int, Eigen::Vector3d> wallsAvgNormal;
-
-	std::copy_if(segmentsAvgNormal.begin(), segmentsAvgNormal.end(),
-				std::back_inserter(wallsAvgNormal),
-				[](const std::pair<int, Eigen::Vector3d>& t) -> bool {
-					return abs(bigSegIt->second.dot(segmentsAvgNormal.at(iIntactSeg))) < ;
-				});*/
-
-
+	double eplisionOrthErr = 0.3; //0.1;
+	
 	for (auto bigSegIt = segmentsAvgNormal.begin(); bigSegIt != segmentsAvgNormal.end(); bigSegIt++)
 	{
 
@@ -488,6 +480,49 @@ void segment(std::vector<std::string> all_args)
 
 	}
 
+	
+
+	std::vector< Eigen::RowVector3d> normalDirs = {
+		{0,0,1},
+		{0,1,0},
+		{0,1,1},
+		{1,0,0},
+		{1,0,1},
+		{1,1,0},
+		{1,1,1},
+	};
+
+	std::map<int, std::vector<int>> normDir2walls;
+
+	for (int iWallSeg: sidewallsSegIndexes)
+	{
+		
+		auto wallNormal = segmentsAvgNormal.at(iWallSeg) - segmentsAvgNormal.at(iIntactSeg);
+		int iFitNormDir = -1;
+		double maxSim = -2;
+
+		for (int iNormDir = 0; iNormDir < normalDirs.size();iNormDir++)
+		{
+			double sim = normalDirs[iNormDir].dot(wallNormal);
+			if (sim > maxSim)
+			{
+				maxSim = sim;
+				iFitNormDir = iNormDir;
+			}
+
+		}
+		
+		if (normDir2walls.count(iFitNormDir)==0)
+		{
+			normDir2walls[iFitNormDir] = { iWallSeg };
+		}
+		else
+		{
+			normDir2walls.at(iFitNormDir).push_back(iWallSeg);
+		}
+		
+	}
+
 	for (int iSeg :sidewallsSegIndexes )
 	{
 		finalSegSeedIndexes.push_back(iSeg);
@@ -496,15 +531,32 @@ void segment(std::vector<std::string> all_args)
 	Eigen::MatrixXd finalSegSeedColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorIt = meshColors.begin();
 
-	for (int iSeg: finalSegSeedIndexes)
+	for (auto it = normDir2walls.begin(); it != normDir2walls.end(); it++)
 	{
+		
+		for (int iSeg : it->second)
+		{
+			std::vector<int> regionVerticesIndx = bigSegments.at(iSeg).piece_vertices_index_;
+			for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
+			{
+				finalSegSeedColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+			}
+		}
+		++colorIt;
+	}
+
+	/*for (auto iSeg: finalSegSeedIndexes)
+	{
+
+		
 		std::vector<int> regionVerticesIndx = bigSegments.at(iSeg).piece_vertices_index_;
 		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
 		{
 			finalSegSeedColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
 		}
+		
 		++colorIt;
-	}
+	}*/
 
 
 
