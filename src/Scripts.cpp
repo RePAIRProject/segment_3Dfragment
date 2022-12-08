@@ -410,7 +410,7 @@ void segment(std::vector<std::string> all_args)
 		std::cout << "Note: the intact surface is not the biggest: check the result of the segmentation" << std::endl;
 	}
 	
-	finalSegSeedIndexes.push_back(iIntactSeg);
+	//finalSegSeedIndexes.push_back(iIntactSeg);
 
 	/*
 		Find the seed of the opposite segment
@@ -437,7 +437,7 @@ void segment(std::vector<std::string> all_args)
 	*/
 	std::vector<int> sidewallsSegIndexes;
 	std::vector<double> wallsSegSimToIntact;
-	double eplisionOrthErr = 0.3; //0.1;
+	double eplisionOrthErr = 0.1; //0.1; // it depends on the size of the segments
 	
 	for (auto bigSegIt = segmentsAvgNormal.begin(); bigSegIt != segmentsAvgNormal.end(); bigSegIt++)
 	{
@@ -550,10 +550,10 @@ void segment(std::vector<std::string> all_args)
 	Eigen::MatrixXd finalSegSeedColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorIt = meshColors.begin();
 
-	for (auto it = dir2walls.begin(); it != dir2walls.end(); it++)
+	for (auto it = finalSegSeedIndexes.begin(); it != finalSegSeedIndexes.end(); it++)
 	{
 		
-		int iSeg = it->second.first;
+		int iSeg =*it;
 			std::vector<int> regionVerticesIndx = bigSegments.at(iSeg).piece_vertices_index_;
 			for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
 			{
@@ -563,19 +563,116 @@ void segment(std::vector<std::string> all_args)
 		++colorIt;
 	}
 
-	/*for (auto iSeg: finalSegSeedIndexes)
+	
+
+	eplisionOrthErr = 0.1;
+	double maxEplisionOrthErr = 0.6;
+	std::map<int, std::pair<int,double>> seg2Seeds;
+
+
+	while (bigSegments.size() > 6) //&& eplisionOrthErr < maxEplisionOrthErr
 	{
 
-		
+
+		for (int iSegFinal : finalSegSeedIndexes)
+		{
+			auto& iVertsAtBoundary = oRegionOutsideBoundaryVerticesList[iSegFinal];
+
+			for (int iVertBoundary : iVertsAtBoundary)
+			{
+				int iNeighboorSeg = vertIndex2SegIndex[iVertBoundary];
+
+				// Don't mix between seeds
+				auto& itNeigh = std::find(finalSegSeedIndexes.begin(), finalSegSeedIndexes.end(), iNeighboorSeg);
+
+				if (itNeigh!=finalSegSeedIndexes.end())
+				{
+					continue;
+				}
+
+				if (iNeighboorSeg != iSegFinal && iNeighboorSeg != iIntactSeg)
+				{
+					double currSimilariry = segmentsAvgNormal[iNeighboorSeg].dot(segmentsAvgNormal[iSegFinal]);
+
+					if (1 - currSimilariry < eplisionOrthErr)
+					{
+						if (seg2Seeds.count(iNeighboorSeg) == 0)
+						{
+							seg2Seeds[iNeighboorSeg] = { iSegFinal,currSimilariry };
+						}
+						else
+						{
+							if (currSimilariry > seg2Seeds[iNeighboorSeg].second)
+							{
+								seg2Seeds[iNeighboorSeg].first = iSegFinal;
+								seg2Seeds[iNeighboorSeg].second = currSimilariry;
+							}
+						}
+					}
+
+				}
+			}
+
+		}
+
+		for (auto& itSeg = seg2Seeds.begin(); itSeg != seg2Seeds.end(); itSeg++)
+		{
+			int iSegDst = itSeg->second.first;
+			int iSegSrc = itSeg->first;
+			for (int iVert : bigSegments.at(iSegSrc).piece_vertices_index_)
+			{
+				vertIndex2SegIndex[iVert] = iSegDst;
+			}
+
+
+			bigSegments.at(iSegDst).piece_vertices_index_.insert(
+				bigSegments.at(iSegDst).piece_vertices_index_.end(),
+				bigSegments.at(iSegSrc).piece_vertices_index_.begin(),
+				bigSegments.at(iSegSrc).piece_vertices_index_.end()
+			);
+
+			oRegionOutsideBoundaryVerticesList[iSegDst].insert(
+				oRegionOutsideBoundaryVerticesList[iSegDst].end(),
+				oRegionOutsideBoundaryVerticesList[iSegSrc].begin(),
+				oRegionOutsideBoundaryVerticesList[iSegSrc].end()
+			);
+
+
+			segmentsSize[iSegDst] = static_cast<double>(bigSegments[iSegDst].piece_vertices_index_.size());
+			segmentsAvgNormal[iSegDst] = fragment.localAvgNormal(bigSegments[iSegDst].piece_vertices_index_).normalized();
+			bigSegments.erase(iSegSrc);
+			segmentsAvgNormal.erase(iSegSrc);
+			segmentsSize.erase(iSegSrc);
+		}
+
+		seg2Seeds.clear();
+		eplisionOrthErr += 0.02;
+	}
+
+	Eigen::MatrixXd finalSegSeedColorsTmp = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	colorIt = meshColors.begin();
+
+	std::vector<int> regionVerticesIndx = bigSegments.at(iIntactSeg).piece_vertices_index_;
+	for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
+	{
+		finalSegSeedColorsTmp.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+	}
+
+	++colorIt;
+
+	for (auto iSeg: finalSegSeedIndexes)
+	{
+
+
 		std::vector<int> regionVerticesIndx = bigSegments.at(iSeg).piece_vertices_index_;
 		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
 		{
-			finalSegSeedColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+			finalSegSeedColorsTmp.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
 		}
-		
-		++colorIt;
-	}*/
 
+		++colorIt;
+	}
+	
 
 
 	//int iMostSimSegNeigh=-1;
@@ -704,11 +801,11 @@ void segment(std::vector<std::string> all_args)
 			//visualizer.writeOFF("byNormals.off", fragment.m_Vertices, fragment.m_Faces, segmentColorsAfterMerge.block(0, 0, segmentColors.rows(), 3));
 			break;
 		
-		//case '7': // for debug
-		//	visualizer.m_Viewer.data().set_colors(segmentAfterSecondMerge);
-		//	std::cout << "Pressed 6, present the mesh after second merging" << std::endl;
-		//	//visualizer.writeOFF("byNormals.off", fragment.m_Vertices, fragment.m_Faces, segmentColorsAfterMerge.block(0, 0, segmentColors.rows(), 3));
-		//	break;
+		case '7': // for debug
+			visualizer.m_Viewer.data().set_colors(finalSegSeedColorsTmp);
+			std::cout << "Pressed 7,finalSegSeedColorsTmp" << std::endl;
+			//visualizer.writeOFF("byNormals.off", fragment.m_Vertices, fragment.m_Faces, segmentColorsAfterMerge.block(0, 0, segmentColors.rows(), 3));
+			break;
 		}
 		
 		return false;
