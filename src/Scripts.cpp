@@ -98,7 +98,7 @@ void segment(std::vector<std::string> all_args)
 	/*
 	* init data structures
 	*/
-	double minSegPercSize = 0.0025;  //0.000125;//0.005 // This need to get as a parameter to the script
+	double minSegPercSize = 0.000125;  //0.000125;//0.005 // This need to get as a parameter to the script
 	std::map<int, Segment> smallSegments;
 	std::map<int, Segment> bigSegments;
 	std::map<int, double> segmentsAvgCurvedness; // We avg? maybe std is a parameter we should consider
@@ -368,6 +368,7 @@ void segment(std::vector<std::string> all_args)
 	}
 
 	std::map<int, Eigen::Vector3d> segmentsAvgNormal;
+	std::map<int, Eigen::Vector3d> segmentsCenterMass;
 	std::map<int, double> segmentsSize;
 	segmentsAvgCurvedness.clear();
 	std::vector<int> finalSegSeedIndexes;
@@ -382,6 +383,19 @@ void segment(std::vector<std::string> all_args)
 		segmentsAvgCurvedness.insert(
 			{ bigSegIt->first,fragment.localAvgCurvedness(bigSegIt->second.piece_vertices_index_) }
 		);
+
+		Eigen::Vector3d sums = Eigen::Vector3d::Zero();
+
+		for (int iVert : bigSegIt->second.piece_vertices_index_)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				sums[j] += fragment.m_Vertices.coeff(iVert, j);
+			}
+
+		}
+
+		segmentsCenterMass.insert({ bigSegIt->first, (sums / bigSegIt->second.piece_vertices_index_.size()).normalized()});
 	}
 
 	int iIntactSeg = std::min_element(
@@ -482,66 +496,70 @@ void segment(std::vector<std::string> all_args)
 
 	
 
-	std::vector< Eigen::RowVector3d> normalDirs = {
+	std::vector< Eigen::RowVector3d> dirs = {
 		{0,0,1},
+		{0,0,-1},
 		{0,1,0},
-		{0,1,1},
+		{0,-1,0},
 		{1,0,0},
-		{1,0,1},
-		{1,1,0},
-		{1,1,1},
+		{-1,0,0}
 	};
 
-	std::map<int, std::vector<int>> normDir2walls;
+	std::map<int, std::pair<int,double>> dir2walls;
 
 	for (int iWallSeg: sidewallsSegIndexes)
 	{
 		
-		auto wallNormal = segmentsAvgNormal.at(iWallSeg) - segmentsAvgNormal.at(iIntactSeg);
-		int iFitNormDir = -1;
+		auto wallOrientation = segmentsCenterMass.at(iWallSeg) - segmentsCenterMass.at(iIntactSeg);
+		int iFitDir = -1;
 		double maxSim = -2;
+		double sim = -3;
 
-		for (int iNormDir = 0; iNormDir < normalDirs.size();iNormDir++)
+		for (int iDir = 0; iDir < dirs.size();iDir++)
 		{
-			double sim = normalDirs[iNormDir].dot(wallNormal);
+			sim = dirs[iDir].dot(wallOrientation);
 			if (sim > maxSim)
 			{
 				maxSim = sim;
-				iFitNormDir = iNormDir;
+				iFitDir = iDir;
 			}
 
 		}
 		
-		if (normDir2walls.count(iFitNormDir)==0)
+		if (dir2walls.count(iFitDir)==0)
 		{
-			normDir2walls[iFitNormDir] = { iWallSeg };
+			dir2walls[iFitDir] = { iWallSeg,maxSim };
 		}
 		else
 		{
-			normDir2walls.at(iFitNormDir).push_back(iWallSeg);
+			if (dir2walls.at(iFitDir).second < maxSim)
+			{
+
+				dir2walls[iFitDir].first =  iWallSeg;
+				dir2walls[iFitDir].second =  maxSim;
+			}
 		}
 		
 	}
 
-	for (int iSeg :sidewallsSegIndexes )
+	for (auto &itSeg : dir2walls)
 	{
-		finalSegSeedIndexes.push_back(iSeg);
+		finalSegSeedIndexes.push_back(itSeg.second.first);
 	}
 
 	Eigen::MatrixXd finalSegSeedColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorIt = meshColors.begin();
 
-	for (auto it = normDir2walls.begin(); it != normDir2walls.end(); it++)
+	for (auto it = dir2walls.begin(); it != dir2walls.end(); it++)
 	{
 		
-		for (int iSeg : it->second)
-		{
+		int iSeg = it->second.first;
 			std::vector<int> regionVerticesIndx = bigSegments.at(iSeg).piece_vertices_index_;
 			for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
 			{
 				finalSegSeedColors.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
 			}
-		}
+		
 		++colorIt;
 	}
 
