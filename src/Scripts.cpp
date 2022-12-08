@@ -396,7 +396,7 @@ void segment(std::vector<std::string> all_args)
 		std::cout << "Note: the intact surface is not the biggest: check the result of the segmentation" << std::endl;
 	}
 	
-	finalSegSeedIndexes.push_back(iIntactSeg);
+	//finalSegSeedIndexes.push_back(iIntactSeg);
 
 	/*
 		Find the seed of the opposite segment
@@ -415,51 +415,82 @@ void segment(std::vector<std::string> all_args)
 		}
 	}
 
-	finalSegSeedIndexes.push_back(iOppositeSeg);
+	//finalSegSeedIndexes.push_back(iOppositeSeg);
 
 
 	/*
 		Find the side walls and opposite segment seeds
 	*/
 	std::vector<int> sidewallsSegIndexes;
-	sidewallsSegIndexes.push_back(iIntactSeg);
-	double eplisionOrthErr = 0.00001;
+	std::vector<double> wallsSegSimToIntact;
+	double eplisionOrthErr = 0.1;
+	/*std::map<int, Eigen::Vector3d> wallsAvgNormal;
+
+	std::copy_if(segmentsAvgNormal.begin(), segmentsAvgNormal.end(),
+				std::back_inserter(wallsAvgNormal),
+				[](const std::pair<int, Eigen::Vector3d>& t) -> bool {
+					return abs(bigSegIt->second.dot(segmentsAvgNormal.at(iIntactSeg))) < ;
+				});*/
+
+
 	for (auto bigSegIt = segmentsAvgNormal.begin(); bigSegIt != segmentsAvgNormal.end(); bigSegIt++)
 	{
-		//int nOrthFracSeg = 0;
-		//int iSegAlign = -1;
-		//double sim = -2;
 
-		//for (int i=0; i<sidewallsSegIndexes.size();++i) 
+		if (bigSegIt->first == iIntactSeg || bigSegIt->first == iOppositeSeg)
+		{
+			continue;
+		}
+
+		double simToIntact = abs(bigSegIt->second.dot(segmentsAvgNormal.at(iIntactSeg)));
+
+		if (simToIntact > eplisionOrthErr)
+		{
+			continue;
+		}
+
+		sidewallsSegIndexes.push_back(bigSegIt->first);
+
+
+		//if (sidewallsSegIndexes.size() == 0)
 		//{
-		//	int iFracSeg = sidewallsSegIndexes[i];
-		//	sim = bigSegIt->second.dot(segmentsAvgNormal.at(iFracSeg));
+		//	sidewallsSegIndexes.push_back(bigSegIt->first);
+		//	wallsSegSimToIntact.push_back(simToIntact);
+		//	continue;
+		//}
 
-		//	// If it is orthogonal
-		//	if (sim < eplisionOrthErr)
+		//int i = 0;
+		//while(i < sidewallsSegIndexes.size())
+		//{
+		//	int iWallSeg = sidewallsSegIndexes[i];
+		//	++i;
+		//	double simToWall = abs(bigSegIt->second.dot(segmentsAvgNormal.at(iWallSeg)));
+
+		//	if (1-simToWall > eplisionOrthErr)
 		//	{
-		//		nOrthFracSeg++;
+		//		continue;
 		//	}
 
-		//	// If it is the same direction to one of the vector orthogonal to the intact
-		//	if (1-sim < eplisionOrthErr)
+		//	// If the segment correlated to the wall
+		//	// Then prefer it if it more orthogonal to the intact
+		//	if (simToIntact < wallsSegSimToIntact[i-1])
 		//	{
-		//		iSegAlign = iFracSeg;
+		//		sidewallsSegIndexes[i - 1] = bigSegIt->first;
+		//		wallsSegSimToIntact[i - 1] = simToIntact;
+		//		break;
 		//	}
 		//}
 
-		//if (nOrthFracSeg < sidewallsSegIndexes.size() - 1 )
+		//if (sidewallsSegIndexes.size() < 4 && i == sidewallsSegIndexes.size())
 		//{
-		//	if (iSegAlign == -1)
-		//	{
-		//		sidewallsSegIndexes.push_back(bigSegIt->first);
-		//	}
-		//	else
-		//	{
-
-		//	}
+		//	sidewallsSegIndexes.push_back(bigSegIt->first);
+		//	wallsSegSimToIntact.push_back(simToIntact);
 		//}
 
+	}
+
+	for (int iSeg :sidewallsSegIndexes )
+	{
+		finalSegSeedIndexes.push_back(iSeg);
 	}
 
 	Eigen::MatrixXd finalSegSeedColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
