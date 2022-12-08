@@ -82,7 +82,7 @@ void segment(std::vector<std::string> all_args)
 	fragment.load();
 
 	std::cout << "Start to segment" << std::endl;
-	double fracture = 0.45; //0.5
+	double fracture = 0.5; //0.45; //0.5
 	double simThresh = fragment.getSimilarThreshByPos(fracture);
 	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 	std::vector<std::vector<int>> oRegionsList;
