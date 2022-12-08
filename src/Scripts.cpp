@@ -82,7 +82,7 @@ void segment(std::vector<std::string> all_args)
 	fragment.load();
 
 	std::cout << "Start to segment" << std::endl;
-	double fracture = 0.45; //0.45; //0.5
+	double fracture = 0.5; //0.45; //0.5
 	double simThresh = fragment.getSimilarThreshByPos(fracture);
 	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 	std::vector<std::vector<int>> oRegionsList;
@@ -98,7 +98,7 @@ void segment(std::vector<std::string> all_args)
 	/*
 	* init data structures
 	*/
-	double minSegPercSize = 0.000125;  //0.000125;//0.005 // This need to get as a parameter to the script
+	double minSegPercSize = 0.00025;  //0.000125;//0.005 // This need to get as a parameter to the script
 	std::map<int, Segment> smallSegments;
 	std::map<int, Segment> bigSegments;
 	std::map<int, double> segmentsAvgCurvedness; // We avg? maybe std is a parameter we should consider
@@ -566,11 +566,10 @@ void segment(std::vector<std::string> all_args)
 	
 
 	eplisionOrthErr = 0.1;
-	double maxEplisionOrthErr = 0.6;
 	std::map<int, std::pair<int,double>> seg2Seeds;
 
 
-	while (bigSegments.size() > 6) //&& eplisionOrthErr < maxEplisionOrthErr
+	while (bigSegments.size() > 6) 
 	{
 
 
@@ -645,20 +644,15 @@ void segment(std::vector<std::string> all_args)
 			segmentsSize.erase(iSegSrc);
 		}
 
-		seg2Seeds.clear();
+		
 		eplisionOrthErr += 0.02;
+		seg2Seeds.clear();
 	}
 
 	Eigen::MatrixXd finalSegSeedColorsTmp = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorIt = meshColors.begin();
 
-	std::vector<int> regionVerticesIndx = bigSegments.at(iIntactSeg).piece_vertices_index_;
-	for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
-	{
-		finalSegSeedColorsTmp.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
-	}
-
-	++colorIt;
+	finalSegSeedIndexes.push_back(iIntactSeg);
 
 	for (auto iSeg: finalSegSeedIndexes)
 	{
