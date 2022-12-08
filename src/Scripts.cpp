@@ -98,11 +98,11 @@ void segment(std::vector<std::string> all_args)
 	/*
 	* init data structures
 	*/
-	double minSegPercSize = 0.000125;//0.005 // This need to get as a parameter to the script
+	double minSegPercSize = 0.000125;  //0.000125;//0.005 // This need to get as a parameter to the script
 	std::map<int, Segment> smallSegments;
 	std::map<int, Segment> bigSegments;
 	std::map<int, double> segmentsAvgCurvedness; // We avg? maybe std is a parameter we should consider
-	std::map<int, Eigen::Vector3d> segmentsAvgNormal;
+	
 	std::map<int, int> vertIndex2SegIndex;
 	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
 
@@ -113,7 +113,7 @@ void segment(std::vector<std::string> all_args)
 		auto segVertsIndexes = oRegionsList[iSeg];
 		Segment currSeg(segVertsIndexes);
 		segmentsAvgCurvedness.insert({ iSeg,fragment.localCurvedness(segVertsIndexes) });
-		segmentsAvgNormal.insert({ iSeg, fragment.localAvgNormal(segVertsIndexes).normalized()});
+		
 
 		double segmentSize = static_cast<double>(currSeg.piece_vertices_index_.size());
 		if (segmentSize/fragmentSize < minSegPercSize){
@@ -225,10 +225,9 @@ void segment(std::vector<std::string> all_args)
 			std::cout << "WARNING: merge did not converged after " << debugIter << " iterations" << std::endl;
 			break;
 		}
-		std::cout << freeVertIndexes.size() << " free vertices remained to be merged" << std::endl;
-		nLastFreeDebug = freeVertIndexes.size();
+		nLastFreeDebug = smallSegments.size();
 
-		std::cout << "WARNING: merge only for a single big segment" << std::endl;
+		//std::cout << "WARNING: merge only for a single big segment" << std::endl;
 		//for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug+1); bigSegIt++)//bigSegments.end()
 		for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)//bigSegments.end()
 		{
@@ -326,7 +325,7 @@ void segment(std::vector<std::string> all_args)
 	Eigen::MatrixXd segmentColorsAfterMerge = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorIt = meshColors.begin();
 
-	std::cout << "WARNING: You present the merge only for a single big segment" << std::endl;
+	//std::cout << "WARNING: You present the merge only for a single big segment" << std::endl;
 	//for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug + 1); bigSegIt++)
 	for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
 	{
@@ -358,6 +357,112 @@ void segment(std::vector<std::string> all_args)
 		}
 	}
 
+	/*
+		Merge the big segments by normals 
+	*/
+
+	if (bigSegments.size() < 6)
+	{
+		std::cout << "ERROR: Expect that the final number of big segment to be greater than 6 (Prior Knoledge)" << std::endl;
+		exit(1);
+	}
+
+	std::map<int, Eigen::Vector3d> segmentsAvgNormal;
+	std::map<int, double> segmentsSize;
+	
+	for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
+	{
+		segmentsSize.insert({ bigSegIt->first, static_cast<double>(bigSegIt->second.piece_vertices_index_.size()) });
+		segmentsAvgNormal.insert(
+			{ bigSegIt->first, fragment.localAvgNormal(bigSegIt->second.piece_vertices_index_).normalized() }
+		);
+	}
+
+	int iMostSimSegNeigh=-1;
+	double maxSim = -2;
+	int nDebug = 0;
+
+	while (bigSegments.size() > 6) // nDebug++ < 1
+	{
+		int iMinSegment = std::min_element(segmentsSize.begin(), segmentsSize.end(), [](const auto& l, const auto& r) {return l.second < r.second; })->first;
+		auto& iVertsAtBoundary = oRegionOutsideBoundaryVerticesList[iMinSegment];
+
+		iMostSimSegNeigh = -1;
+		maxSim = -2;
+
+		/*
+			Compute the neighboors segments
+		*/
+		for (int iVertBoundary : iVertsAtBoundary)
+		{
+			int iNeighboorSeg = vertIndex2SegIndex[iVertBoundary];
+
+			if (iNeighboorSeg != iMinSegment)
+			{
+				double currSimilariry = segmentsAvgNormal[iNeighboorSeg].dot(segmentsAvgNormal[iMinSegment]);
+
+				if (currSimilariry > maxSim)
+				{
+					iMostSimSegNeigh = iNeighboorSeg;
+					maxSim = currSimilariry;
+				}
+			}
+		}
+
+		if (iMostSimSegNeigh==-1)
+		{
+			std::cout << "In the second merge: we must have fit neighboors" << std::endl;
+			std::exit(1);
+		}
+
+		/*for (int i = 0; i < bigSegments.at(iMinSegment).piece_vertices_index_.size(); i++)
+		{
+			vertIndex2SegIndex[bigSegments.at(iMinSegment).piece_vertices_index_[i]] = iMostSimSegNeigh;
+		}*/
+		for (int iVert : bigSegments.at(iMinSegment).piece_vertices_index_)
+		{
+			vertIndex2SegIndex[iVert] = iMostSimSegNeigh;
+		}
+
+			
+		bigSegments.at(iMostSimSegNeigh).piece_vertices_index_.insert(
+			bigSegments.at(iMostSimSegNeigh).piece_vertices_index_.end(),
+			bigSegments.at(iMinSegment).piece_vertices_index_.begin(),
+			bigSegments.at(iMinSegment).piece_vertices_index_.end()
+		);
+
+		oRegionOutsideBoundaryVerticesList[iMostSimSegNeigh].insert(
+			oRegionOutsideBoundaryVerticesList[iMostSimSegNeigh].end(),
+			oRegionOutsideBoundaryVerticesList[iMinSegment].begin(),
+			oRegionOutsideBoundaryVerticesList[iMinSegment].end()
+		);
+
+
+		segmentsSize[iMostSimSegNeigh]= static_cast<double>(bigSegments[iMostSimSegNeigh].piece_vertices_index_.size());
+		segmentsAvgNormal[iMostSimSegNeigh] = fragment.localAvgNormal(bigSegments[iMostSimSegNeigh].piece_vertices_index_).normalized();
+		bigSegments.erase(iMinSegment);
+		segmentsAvgNormal.erase(iMinSegment);
+		segmentsSize.erase(iMinSegment);
+	}
+
+	/*
+		Coloring
+
+	*/
+
+	Eigen::MatrixXd segmentAfterSecondMerge = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	colorIt = meshColors.begin();
+
+	for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)
+	{
+		//auto bigSegIt = bigSegments.find(iMostSimSegNeigh);
+		std::vector<int> regionVerticesIndx = bigSegIt->second.piece_vertices_index_;
+		for (int iVert = 0; iVert < regionVerticesIndx.size(); iVert++)
+		{
+			segmentAfterSecondMerge.row(regionVerticesIndx[iVert]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+		}
+		++colorIt;
+	}
 
 	// meshColors[0] //segmentColors
 	visualizer.m_Viewer.callback_key_down =
@@ -390,6 +495,12 @@ void segment(std::vector<std::string> all_args)
 		case '5': // for debug
 			visualizer.m_Viewer.data().set_colors(segmentBoundaryAfterMerge);
 			std::cout << "Pressed 5, present the mesh boundary after merging" << std::endl;
+			//visualizer.writeOFF("byNormals.off", fragment.m_Vertices, fragment.m_Faces, segmentColorsAfterMerge.block(0, 0, segmentColors.rows(), 3));
+			break;
+
+		case '6': // for debug
+			visualizer.m_Viewer.data().set_colors(segmentAfterSecondMerge);
+			std::cout << "Pressed 6, present the mesh after second merging" << std::endl;
 			//visualizer.writeOFF("byNormals.off", fragment.m_Vertices, fragment.m_Faces, segmentColorsAfterMerge.block(0, 0, segmentColors.rows(), 3));
 			break;
 		}
