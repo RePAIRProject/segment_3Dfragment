@@ -28,7 +28,7 @@ void ObjFragment::load()
 		m_Normals, m_Faces, m_Faces2TextureCoordinates, m_Faces2Normals);
 
 	m_Vertices = V.block(0, 0, V.rows(), 3);
-	//m_Colors = V.block(0, 3, V.rows(), 3); // when playing the cub file it is seems to be meaningless
+	m_Colors = V.block(0, 3, V.rows(), 3); // when playing the cub file it is seems to be meaningless
 	igl::adjacency_list(m_Faces, m_adjacentVertices); //list of lists containing at index i the adjacent vertices of vertex i
 	std::vector < std::vector<int>> _;
 	igl::vertex_triangle_adjacency(m_Vertices, m_Faces, m_VerticesAdjacentFacesList, _);

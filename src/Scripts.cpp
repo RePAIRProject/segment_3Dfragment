@@ -82,7 +82,7 @@ void segment(std::vector<std::string> all_args)
 	fragment.load();
 
 	std::cout << "Start to segment" << std::endl;
-	double fracture = 0.5; //0.45; //0.5
+	double fracture = 0.45; //0.45; //0.5
 	double simThresh = fragment.getSimilarThreshByPos(fracture);
 	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 	std::vector<std::vector<int>> oRegionsList;
@@ -644,8 +644,11 @@ void segment(std::vector<std::string> all_args)
 			segmentsSize.erase(iSegSrc);
 		}
 
-		
-		eplisionOrthErr += 0.02;
+		if (seg2Seeds.size()==0)
+		{
+			eplisionOrthErr += 0.02;
+
+		}
 		seg2Seeds.clear();
 	}
 
@@ -762,7 +765,7 @@ void segment(std::vector<std::string> all_args)
 
 		switch (key) {
 		case '1': // for debug
-			visualizer.m_Viewer.data().set_colors(meshColors[0]);
+			visualizer.m_Viewer.data().set_colors(fragment.m_Colors);//meshColors[0]
 			std::cout << "Pressed 1" << std::endl;
 			break;
 		case '2': // for debug
