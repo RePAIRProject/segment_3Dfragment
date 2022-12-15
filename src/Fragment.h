@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <igl/principal_curvature.h>
-#include <../src/Segment.h>
+//#include <../src/Segment.h>
 // Todo : make an fragment class that will have V and F only
 
 
@@ -36,10 +36,13 @@ public:
 	void segmentByCurvedness(std::vector<std::vector<int>>& oRegionsList,std::vector<std::vector<int>>& oRegionOutsideBoundaryVerticesList, double similarThreshold);
 	void grow_current_region(std::map<int, double>& available_curves, std::unordered_map<int, int>& current_region, std::unordered_map<int, int>& current_region_boundary_neighbors, std::vector<int> current_seeds, int min_curvature_index, double segment_threshold_value);
 	//void filterSmallRegions(std::vector<Segment>& segments, std::vector<std::vector<int>>& regions_list_);
-	void saveAsObj(std::string outputPath, Segment& iSegment);
+	//void saveAsObj(std::string outputPath);
 
 	double localAvgCurvedness(const std::vector<int> &vertIndexes);
 	Eigen::Vector3d localAvgNormal(const std::vector<int>& vertIndexes);
+	
+
+
 };
 
 

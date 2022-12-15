@@ -35,3 +35,5 @@ void sortToSmallAndBigSegments(std::map<int, Segment*>& oSmallSegments, std::map
 		
 	}
 }
+
+//TODO: is this method should be in the segment class? If so I need to load the vertices

@@ -21,6 +21,7 @@ ObjFragment::ObjFragment(std::string filePath)
 	m_filePath = filePath;
 }
 
+
 void ObjFragment::load()
 {
 	Eigen::MatrixXd V;
@@ -241,50 +242,50 @@ void ObjFragment::grow_current_region(std::map<int, double>& available_curves, s
 
 
 
-
-void ObjFragment::saveAsObj(std::string outputPath, Segment &iSegment)
-{
-	std::string tmpFilePath = m_filePath + ".tmp"; //"..\\fragments\\cube\\cube_igl_tmp.obj";
-	igl::writeOBJ(tmpFilePath, iSegment.m_Vertices, iSegment.m_Faces, m_Normals,
-		iSegment.m_Faces2Normals, m_TextureCoordinates, iSegment.m_Faces2TextureCoordinates);
-
-	std::ifstream input(m_filePath);
-	std::string mtlibLine;
-	std::string materialLine;
-
-	for (std::string line; getline(input, line); )
-	{
-		if (line.find("mtllib") != std::string::npos)
-		{
-			mtlibLine = line;
-		}
-
-		if (line.find("usemtl") != std::string::npos)
-		{
-			materialLine = line;
-		}
-
-		if (mtlibLine.length() > 0 && materialLine.length() > 0)
-		{
-			break;
-		}
-
-	}
-
-	std::ofstream outFile(outputPath);
-	outFile << "# Generated with Libigl \n" << mtlibLine << '\n' << materialLine << "\n\n";
-
-	{
-		std::ifstream objData(tmpFilePath);
-
-		for (std::string line; getline(objData, line); )
-		{
-			outFile << line << "\n";
-		}
-	}
-
-	std::filesystem::remove(tmpFilePath);
-}
+//
+//void ObjFragment::saveAsObj(std::string outputPath, Segment &iSegment)
+//{
+//	std::string tmpFilePath = m_filePath + ".tmp"; //"..\\fragments\\cube\\cube_igl_tmp.obj";
+//	igl::writeOBJ(tmpFilePath, iSegment.m_Vertices, iSegment.m_Faces, m_Normals,
+//		iSegment.m_Faces2Normals, m_TextureCoordinates, iSegment.m_Faces2TextureCoordinates);
+//
+//	std::ifstream input(m_filePath);
+//	std::string mtlibLine;
+//	std::string materialLine;
+//
+//	for (std::string line; getline(input, line); )
+//	{
+//		if (line.find("mtllib") != std::string::npos)
+//		{
+//			mtlibLine = line;
+//		}
+//
+//		if (line.find("usemtl") != std::string::npos)
+//		{
+//			materialLine = line;
+//		}
+//
+//		if (mtlibLine.length() > 0 && materialLine.length() > 0)
+//		{
+//			break;
+//		}
+//
+//	}
+//
+//	std::ofstream outFile(outputPath);
+//	outFile << "# Generated with Libigl \n" << mtlibLine << '\n' << materialLine << "\n\n";
+//
+//	{
+//		std::ifstream objData(tmpFilePath);
+//
+//		for (std::string line; getline(objData, line); )
+//		{
+//			outFile << line << "\n";
+//		}
+//	}
+//
+//	std::filesystem::remove(tmpFilePath);
+//}
 
 
 double ObjFragment::localAvgCurvedness(const std::vector<int>& vertIndexes)

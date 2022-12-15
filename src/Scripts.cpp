@@ -29,6 +29,13 @@ void segment_intact_surface(std::vector<std::string> all_args)
 
 	while (!isSegmented)
 	{
+		oRegionsList.clear();
+		oRegionOutsideBoundaryVerticesList.clear();
+		vertIndex2SegIndex.clear();
+		segments.clear();
+		smallSegments.clear();
+		bigSegments.clear();
+
 		double simThresh = fragment.getSimilarThreshByPos(fracture);
 		std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 		fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
@@ -39,12 +46,12 @@ void segment_intact_surface(std::vector<std::string> all_args)
 		//fragment.filterSmallRegions(segments, oRegionsList);
 		std::cout << "In trial: " << nTrials << " Found " << bigSegments.size() << "big Segments" << std::endl;
 
-		if (segments.size() == 0)
+		if (bigSegments.size() == 0)
 		{
 			fracture = fracture + 0.05;
 		}
 		else {
-			if (segments.size() == 1)
+			if (bigSegments.size() == 1)
 			{
 				fracture = fracture - 0.12;
 			}
@@ -64,26 +71,55 @@ void segment_intact_surface(std::vector<std::string> all_args)
 			std::exit(1);
 		}
 
-		oRegionsList.clear();
-		oRegionOutsideBoundaryVerticesList.clear();
-		vertIndex2SegIndex.clear();
-		segments.clear();
-		smallSegments.clear();
-		bigSegments.clear();
 	}
 
-	int intactIndex = -1; //fragment.findIntactSegmentIndex(segments);
+	int intactIndex = -1; 
+	
+	double minMeanCurvedness = 9999999;
+	int k = 0;
+	
+	for (Segment& seg : segments)
+	{
+		double segCurvedness = 0;
+		for (int verIndex : seg.piece_vertices_index_)
+		{
+			segCurvedness += fragment.m_NormedMeshCurvedness[verIndex];
+		}
+	
+	
+		double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
+	
+		if (segAvgCur < minMeanCurvedness)
+		{
+			minMeanCurvedness = segAvgCur;
+			intactIndex = k;
+		}
+	
+		++k;
+	}
 
-
-	Segment intactSurface(segments[intactIndex]);
-	intactSurface.loadBasicData(fragment.m_VerticesAdjacentFacesList,
-								fragment.m_Faces, fragment.m_Vertices,
-								fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals);
-
-	//std::string fragFolderPath = fragmentPath.substr(0, fragmentPath.find_last_of("\\/"));
-	//fragment.saveAsObj(fragFolderPath + "\\" + outFileName, intactSurface);
-	fragment.saveAsObj(fragment.m_FolderPath+ "\\" + outFileName, intactSurface);
+	segments[intactIndex].loadBasicData(fragment.m_VerticesAdjacentFacesList,
+		fragment.m_Faces, fragment.m_Vertices,
+		fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals,fragment.m_Normals,fragment.m_filePath);
+	segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + outFileName, fragment.m_Normals,fragment.m_TextureCoordinates);
 	std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
+
+	//std::map<int, double> segmentsAvgCurvedness;
+	//for (auto it = bigSegments.begin(); it != bigSegments.end(); it++)
+	//{
+	//	it->second->loadBasicData();
+	//	segmentsAvgCurvedness.insert({ it->first, it->second->calcAvgCurvedness() });
+	//}
+
+
+
+	//intactSurface.loadBasicData(fragment.m_VerticesAdjacentFacesList,
+	//							fragment.m_Faces, fragment.m_Vertices,
+	//							fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals);
+
+	
+	//fragment.saveAsObj(fragment.m_FolderPath+ "\\" + outFileName, intactSurface);
+	//std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
 
 
 	// For debug:
