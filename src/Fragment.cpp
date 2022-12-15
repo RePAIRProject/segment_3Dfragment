@@ -26,9 +26,7 @@ void ObjFragment::load()
 	Eigen::MatrixXd V;
 	igl::readOBJ(m_filePath, V, m_TextureCoordinates, 
 		m_Normals, m_Faces, m_Faces2TextureCoordinates, m_Faces2Normals);
-
 	m_FolderPath = m_filePath.substr(0, m_filePath.find_last_of("/\\"));
-
 
 
 	m_Vertices = V.block(0, 0, V.rows(), 3);
@@ -38,17 +36,17 @@ void ObjFragment::load()
 	igl::vertex_triangle_adjacency(m_Vertices, m_Faces, m_VerticesAdjacentFacesList, _);
 
 
-	Eigen::MatrixXd pd1, pd2;
+	/*Eigen::MatrixXd pd1, pd2;
 	Eigen::VectorXd pv1, pv2;
 	igl::principal_curvature(m_Vertices, m_Faces, pd1, pd2, pv1, pv2);
-	m_MeshCurvedness = 0.5*(pv1.array().square() + pv2.array().square()).sqrt();
+	m_MeshCurvedness = 0.5*(pv1.array().square() + pv2.array().square()).sqrt();*/
 
 	/*std::ofstream f("..\\fragments\\group_39\\processed\\RPf_00320_curvedness.txt");
 	for (int i = 0; i < m_MeshCurvedness.rows(); ++i) {
 		f << m_MeshCurvedness(i) << '\n';
 	}*/
 
-	/*std::cout << "Warning you read the curvedness HARDCODED" << std::endl;
+	std::cout << "Warning you read the curvedness HARDCODED" << std::endl;
 	m_MeshCurvedness.resize(m_Vertices.rows());
 	std::ifstream input("..\\fragments\\group_39\\processed\\RPf_00320_curvedness.txt");
 	int i = 0;
@@ -56,7 +54,7 @@ void ObjFragment::load()
 	{
 		m_MeshCurvedness(i) = std::stod(line);
 		++i;
-	}*/
+	}
 
 
 	Eigen::MatrixXd curvednessLog = m_MeshCurvedness.array().log();
@@ -142,34 +140,34 @@ void ObjFragment::segmentByCurvedness(std::vector<std::vector<int>> &oRegionsLis
 }
 
 
-int ObjFragment::findIntactSegmentIndex(std::vector<Segment>& segments)
-{
-	int chosenIndex = 0;
-	double minMeanCurvedness = 9999999;
-	int k = 0;
-
-	for (Segment& seg : segments)
-	{
-		double segCurvedness = 0;
-		for (int verIndex : seg.piece_vertices_index_)
-		{
-			segCurvedness += m_NormedMeshCurvedness[verIndex];
-		}
-
-
-		double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
-
-		if (segAvgCur < minMeanCurvedness)
-		{
-			minMeanCurvedness = segAvgCur;
-			chosenIndex = k;
-		}
-
-		++k;
-	}
-
-	return chosenIndex;
-}
+//int ObjFragment::findIntactSegmentIndex(std::vector<Segment>& segments)
+//{
+//	int chosenIndex = 0;
+//	double minMeanCurvedness = 9999999;
+//	int k = 0;
+//
+//	for (Segment& seg : segments)
+//	{
+//		double segCurvedness = 0;
+//		for (int verIndex : seg.piece_vertices_index_)
+//		{
+//			segCurvedness += m_NormedMeshCurvedness[verIndex];
+//		}
+//
+//
+//		double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
+//
+//		if (segAvgCur < minMeanCurvedness)
+//		{
+//			minMeanCurvedness = segAvgCur;
+//			chosenIndex = k;
+//		}
+//
+//		++k;
+//	}
+//
+//	return chosenIndex;
+//}
 
 
 void ObjFragment::grow_current_region(std::map<int, double>& available_curves, std::unordered_map<int, int>& current_region, std::unordered_map<int, int>& current_region_boundary_neighbors, std::vector<int> current_seeds, int min_curvature_index, double segment_threshold_value)
@@ -219,27 +217,27 @@ void ObjFragment::grow_current_region(std::map<int, double>& available_curves, s
 
 
 
-// consider to move this code to the script (segment_intact_surface function)
-void ObjFragment::filterSmallRegions(std::vector<Segment> &segments,std::vector<std::vector<int>> &regions_list_)
-{
-
-	std::map<int, std::vector<int>> small_regions;
-	double minimal_segment_area_percent = 0.05;
-
-	for (auto i = 0; i < regions_list_.size(); i++)
-	{
-		if ((static_cast<double>(regions_list_[i].size()) / static_cast<double>(m_Vertices.rows())) <= minimal_segment_area_percent)
-		{
-			small_regions[i] = regions_list_[i];
-		}
-		else
-		{
-			const Segment current = Segment(regions_list_[i]);
-			segments.push_back(current);
-			//segmented_regions_.push_back(current);
-		}
-	}
-}
+//// consider to move this code to the script (segment_intact_surface function)
+//void ObjFragment::filterSmallRegions(std::vector<Segment> &segments,std::vector<std::vector<int>> &regions_list_)
+//{
+//
+//	std::map<int, std::vector<int>> small_regions;
+//	double minimal_segment_area_percent = 0.05;
+//
+//	for (auto i = 0; i < regions_list_.size(); i++)
+//	{
+//		if ((static_cast<double>(regions_list_[i].size()) / static_cast<double>(m_Vertices.rows())) <= minimal_segment_area_percent)
+//		{
+//			small_regions[i] = regions_list_[i];
+//		}
+//		else
+//		{
+//			const Segment current = Segment(regions_list_[i]);
+//			segments.push_back(current);
+//			//segmented_regions_.push_back(current);
+//		}
+//	}
+//}
 
 
 

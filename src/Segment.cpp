@@ -5,9 +5,10 @@ Segment::Segment()
 
 }
 
-Segment::Segment(std::vector<int> vertices_index)
+Segment::Segment(std::vector<int> piece_vertices_index, std::vector<int> piece_vertices_indexes_boundary)
 {
-	piece_vertices_index_ = vertices_index;
+	piece_vertices_index_ = piece_vertices_index;
+	m_OutsideBoundaryVertsIndexes = piece_vertices_indexes_boundary;
 }
 
 

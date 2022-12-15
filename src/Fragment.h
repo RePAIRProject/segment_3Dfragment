@@ -29,13 +29,13 @@ public:
 
 	void load();
 	//void extractIntactSurface(Segment& oIntactSurface, std::vector<Segment>& segments);
-	int findIntactSegmentIndex(std::vector<Segment>& segments);
+	//int findIntactSegmentIndex(std::vector<Segment>& segments);
 
 
 	double getSimilarThreshByPos(double fracture);
 	void segmentByCurvedness(std::vector<std::vector<int>>& oRegionsList,std::vector<std::vector<int>>& oRegionOutsideBoundaryVerticesList, double similarThreshold);
 	void grow_current_region(std::map<int, double>& available_curves, std::unordered_map<int, int>& current_region, std::unordered_map<int, int>& current_region_boundary_neighbors, std::vector<int> current_seeds, int min_curvature_index, double segment_threshold_value);
-	void filterSmallRegions(std::vector<Segment>& segments, std::vector<std::vector<int>>& regions_list_);
+	//void filterSmallRegions(std::vector<Segment>& segments, std::vector<std::vector<int>>& regions_list_);
 	void saveAsObj(std::string outputPath, Segment& iSegment);
 
 	double localAvgCurvedness(const std::vector<int> &vertIndexes);

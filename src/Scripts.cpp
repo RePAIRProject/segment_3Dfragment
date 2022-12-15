@@ -1,6 +1,6 @@
 #include "Scripts.h"
 #include "Visualization.h"
-
+#include "ScriptsUtils.h"
 
 void segment_intact_surface(std::vector<std::string> all_args)
 {
@@ -12,23 +12,32 @@ void segment_intact_surface(std::vector<std::string> all_args)
 	std::cout << "Loading data" << std::endl;
 	fragment.load();
 
-	std::cout << "Start to segment" << std::endl;
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
+	std::map<int, int> vertIndex2SegIndex;
+	std::vector<Segment> segments;
+	std::map<int, Segment*> smallSegments;
+	std::map<int, Segment*> bigSegments;
 
 	bool isSegmented = false;
 
 	double fracture = 0.65;
-	std::vector<Segment> segments;
+	double minBigSegPercSize = 0.05;
 	int nTrials = 1;
+
+	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
 
 	while (!isSegmented)
 	{
 		double simThresh = fragment.getSimilarThreshByPos(fracture);
 		std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 		fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
-		fragment.filterSmallRegions(segments, oRegionsList);
-		std::cout << "In trial: " << nTrials << " Found " << segments.size() << " Segments" << std::endl;
+
+		initSegments(segments, vertIndex2SegIndex, oRegionsList, oRegionOutsideBoundaryVerticesList, fragmentSize);
+		sortToSmallAndBigSegments(smallSegments, bigSegments, segments, minBigSegPercSize);
+
+		//fragment.filterSmallRegions(segments, oRegionsList);
+		std::cout << "In trial: " << nTrials << " Found " << bigSegments.size() << "big Segments" << std::endl;
 
 		if (segments.size() == 0)
 		{
@@ -55,9 +64,16 @@ void segment_intact_surface(std::vector<std::string> all_args)
 			std::exit(1);
 		}
 
+		oRegionsList.clear();
+		oRegionOutsideBoundaryVerticesList.clear();
+		vertIndex2SegIndex.clear();
+		segments.clear();
+		smallSegments.clear();
+		bigSegments.clear();
 	}
 
-	int intactIndex = fragment.findIntactSegmentIndex(segments);
+	int intactIndex = -1; //fragment.findIntactSegmentIndex(segments);
+
 
 	Segment intactSurface(segments[intactIndex]);
 	intactSurface.loadBasicData(fragment.m_VerticesAdjacentFacesList,

@@ -1,6 +1,8 @@
 #pragma once	
 #include <igl/adjacency_list.h>
 #include <set>
+//#include <Fragment.h>
+
 
 class Segment
 {
@@ -8,8 +10,10 @@ public:
 	Segment();
 
 	std::vector<int> piece_vertices_index_;
-	
-	Segment(std::vector<int> vertices_index);
+	std::vector<int> m_OutsideBoundaryVertsIndexes;
+	double m_fracSizeOfFragment;
+
+	Segment(std::vector<int> piece_vertices_index, std::vector<int> piece_vertices_indexes_boundary);
 
 	Segment(Eigen::MatrixXd V, Eigen::MatrixXd  TC, Eigen::MatrixXd N,
 		Eigen::MatrixXi F, Eigen::MatrixXi  FTC, Eigen::MatrixXi FN);
