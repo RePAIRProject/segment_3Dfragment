@@ -27,6 +27,10 @@ void ObjFragment::load()
 	igl::readOBJ(m_filePath, V, m_TextureCoordinates, 
 		m_Normals, m_Faces, m_Faces2TextureCoordinates, m_Faces2Normals);
 
+	m_FolderPath = m_filePath.substr(0, m_filePath.find_last_of("/\\"));
+
+
+
 	m_Vertices = V.block(0, 0, V.rows(), 3);
 	m_Colors = V.block(0, 3, V.rows(), 3); // when playing the cub file it is seems to be meaningless
 	igl::adjacency_list(m_Faces, m_adjacentVertices); //list of lists containing at index i the adjacent vertices of vertex i
@@ -218,18 +222,12 @@ void ObjFragment::grow_current_region(std::map<int, double>& available_curves, s
 // consider to move this code to the script (segment_intact_surface function)
 void ObjFragment::filterSmallRegions(std::vector<Segment> &segments,std::vector<std::vector<int>> &regions_list_)
 {
-	//Eigen::MatrixXd vertices_with_region_indication = m_Vertices;
-	//std::map<int, std::vector<int>> merged_regions_list;
-	std::map<int, std::vector<int>> small_regions;
-	//vertices_with_region_indication.conservativeResize(Eigen::NoChange, m_Vertices.cols() + 1);
-	//const auto region_index_column = vertices_with_region_indication.cols() - 1;
 
+	std::map<int, std::vector<int>> small_regions;
 	double minimal_segment_area_percent = 0.05;
 
-	//const auto NO_INPUT = -1;
 	for (auto i = 0; i < regions_list_.size(); i++)
 	{
-		//merged_regions_list[i] = regions_list_[i];
 		if ((static_cast<double>(regions_list_[i].size()) / static_cast<double>(m_Vertices.rows())) <= minimal_segment_area_percent)
 		{
 			small_regions[i] = regions_list_[i];

@@ -13,6 +13,7 @@ public:
 	ObjFragment(std::string filePath);
 	
 	std::string m_filePath;
+	std::string m_FolderPath;
 	std::string m_OutputPath;
 	Eigen::MatrixXd m_Vertices;//   V  double matrix of vertex positions  #V by 3
 	Eigen::MatrixXd m_TextureCoordinates;//   TC  double matrix of texture coordinats #TC by 2
