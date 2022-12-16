@@ -28,12 +28,20 @@ void segment_intact_surface(std::vector<std::string> all_args)
 
 	while (!isSegmented)
 	{
+		if (fracture > 1 || fracture <=0)
+		{
+			std::cout << "fracrure value is " << fracture << " and it should be between 0 to 1" << std::endl;
+			std::cout << "Please rerun mannually..exiting" << std::endl;
+			std::exit(1);
+		}
+
 		oRegionsList.clear();
 		oRegionOutsideBoundaryVerticesList.clear();
 		vertIndex2SegIndex.clear();
 		segments.clear();
 		smallSegments.clear();
 		bigSegments.clear();
+		nTrials += 1;
 
 		double simThresh = fragment.getSimilarThreshByPos(fracture);
 		std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
@@ -50,27 +58,13 @@ void segment_intact_surface(std::vector<std::string> all_args)
 			fracture = fracture + 0.05;
 			continue;
 		}
-		else {
-			if (bigSegments.size() == 1)
-			{
-				fracture = fracture - 0.12;
-				continue;
-			}
-			else
-			{
-				//isSegmented = true;
-			}
-
-		}
-
-		nTrials += 1;
-
-		if (fracture > 1)
+		
+		if (bigSegments.size() == 1)
 		{
-			std::cout << "fracrure value is " << fracture << " and it should be between 0 to 1" << std::endl;
-			std::cout << "Please rerun mannually..exiting" << std::endl;
-			std::exit(1);
+			fracture = fracture - 0.12;
+			continue;
 		}
+		
 
 		intactIndex = -1;
 		double minMeanCurvedness = 9999999;

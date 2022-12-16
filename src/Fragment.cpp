@@ -39,10 +39,11 @@ void ObjFragment::load()
 	igl::vertex_triangle_adjacency(m_Vertices, m_Faces, m_VerticesAdjacentFacesList, _);
 
 
-	std::string curvedPath = m_FolderPath + "\\" + m_Name + "_curvedness.txt";
-	try
+	std::string curvedPath = m_FolderPath + "\\" + m_Name + "_curvedness.txt";	
+	std::ifstream input(curvedPath);
+
+	if (input.good())
 	{
-		std::ifstream input(curvedPath);
 		m_MeshCurvedness.resize(m_Vertices.rows());
 		int i = 0;
 		for (std::string line; getline(input, line); )
@@ -51,7 +52,7 @@ void ObjFragment::load()
 			++i;
 		}
 	}
-	catch (const std::exception&)
+	else
 	{
 		Eigen::MatrixXd pd1, pd2;
 		Eigen::VectorXd pv1, pv2;
