@@ -48,15 +48,17 @@ void segment_intact_surface(std::vector<std::string> all_args)
 		if (bigSegments.size() == 0)
 		{
 			fracture = fracture + 0.05;
+			continue;
 		}
 		else {
 			if (bigSegments.size() == 1)
 			{
 				fracture = fracture - 0.12;
+				continue;
 			}
 			else
 			{
-				isSegmented = true;
+				//isSegmented = true;
 			}
 
 		}
@@ -93,13 +95,18 @@ void segment_intact_surface(std::vector<std::string> all_args)
 			++k;
 		}
 
-		// the computation is from fragment class because I don't want to load all the basic data to 
-		// heavy on the memory (?)
-
-
 		segments[intactIndex].loadNormedNormals();
 		Eigen::Vector3d avgNormal = calcAvg(segments[intactIndex].m_NormedNormals);
+		Eigen::Vector3d stdNormal = calcVariance(segments[intactIndex].m_NormedNormals, avgNormal).array().sqrt();
+		double l2 = stdNormal.norm();
 
+		if (l2 < 0.2)
+		{
+			isSegmented = true;
+		}
+		else {
+			fracture = fracture - 0.07;
+		}
 	}
 
 	

@@ -29,15 +29,16 @@ double Segment::calcAvgCurvedness()
 void Segment::loadNormedNormals()
 {
 	//m_NormedNormals = Eigen::MatrixXd::Zero(piece_vertices_index_.size(), 3);
-	const Eigen::MatrixXd& parentNormals = m_ParentFragment.m_Normals;
+	const Eigen::MatrixXd &parentNormals = m_ParentFragment.m_Normals;
+	
 	for (int vertexIndex : piece_vertices_index_)
 	{
 		Eigen::Vector3d norm = { parentNormals(vertexIndex, 0),
 									parentNormals(vertexIndex, 1),
 										parentNormals(vertexIndex, 2) };
 
+		norm.normalize();
 		m_NormedNormals.push_back(norm);
-
 	}
 }
 

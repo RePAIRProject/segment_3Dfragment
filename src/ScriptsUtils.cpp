@@ -47,3 +47,17 @@ Eigen::Vector3d calcAvg(const std::vector<Eigen::Vector3d>& vectors)
 
 	return sum / vectors.size();
 }
+
+Eigen::Vector3d calcVariance(const std::vector<Eigen::Vector3d>& vectors, Eigen::Vector3d mean)
+{
+	Eigen::Vector3d sum = Eigen::Vector3d::Zero();
+	for (auto& vecIt : vectors)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			sum[i] = sum[i] + (vecIt[i] - mean[i])* (vecIt[i] - mean[i]);
+		}
+	}
+
+	return sum / vectors.size();
+}

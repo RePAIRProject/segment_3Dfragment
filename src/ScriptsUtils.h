@@ -10,4 +10,4 @@ void initSegments(std::vector<Segment> &oSegments, std::map<int, int> &oVertInde
 void sortToSmallAndBigSegments(std::map<int, Segment*>& oSmallSegments, std::map<int, Segment*>& oBigSegments, std::vector<Segment> segments, double minBigSegPercSize);
 
 Eigen::Vector3d calcAvg(const std::vector<Eigen::Vector3d>& vectors);
-Eigen::Vector3d calcStd(const std::vector<Eigen::Vector3d>& vectors, Eigen::Vector3d mean);
+Eigen::Vector3d calcVariance(const std::vector<Eigen::Vector3d>& vectors, Eigen::Vector3d mean);
