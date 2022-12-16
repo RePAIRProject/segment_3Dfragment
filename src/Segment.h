@@ -42,3 +42,5 @@ public:
 
 
 };
+
+void colorFrag(Eigen::MatrixXd& oColors, const std::map<int, Segment*>& segments, std::map<int, Eigen::RowVector3d>::iterator& colorIt);

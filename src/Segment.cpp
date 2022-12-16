@@ -171,3 +171,21 @@ void Segment::saveAsObj(std::string outputPath)
 
 	std::filesystem::remove(tmpFilePath);
 }
+
+void colorFrag(Eigen::MatrixXd &oColors,const std::map<int, Segment*>& segments,
+				std::map<int, Eigen::RowVector3d>::iterator& colorIt)
+{
+	
+	for (auto &it = segments.begin(); it != segments.end(); it++)
+	{
+		
+		int segSize = it->second->piece_vertices_index_.size();
+		//std::vector<int>* regionVerticesIndx = it->second.piece_vertices_index_;
+		for (int i = 0; i < segSize; i++)
+		{
+			oColors.row(it->second->piece_vertices_index_[i]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+		}
+
+		colorIt++;
+	}
+}

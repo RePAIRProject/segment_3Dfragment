@@ -148,37 +148,11 @@ void ObjFragment::segmentByCurvedness(std::vector<std::vector<int>> &oRegionsLis
 }
 
 
-//int ObjFragment::findIntactSegmentIndex(std::vector<Segment>& segments)
-//{
-//	int chosenIndex = 0;
-//	double minMeanCurvedness = 9999999;
-//	int k = 0;
-//
-//	for (Segment& seg : segments)
-//	{
-//		double segCurvedness = 0;
-//		for (int verIndex : seg.piece_vertices_index_)
-//		{
-//			segCurvedness += m_NormedMeshCurvedness[verIndex];
-//		}
-//
-//
-//		double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
-//
-//		if (segAvgCur < minMeanCurvedness)
-//		{
-//			minMeanCurvedness = segAvgCur;
-//			chosenIndex = k;
-//		}
-//
-//		++k;
-//	}
-//
-//	return chosenIndex;
-//}
 
-
-void ObjFragment::grow_current_region(std::map<int, double>& available_curves, std::unordered_map<int, int>& current_region, std::unordered_map<int, int>& current_region_boundary_neighbors, std::vector<int> current_seeds, int min_curvature_index, double segment_threshold_value)
+void ObjFragment::grow_current_region(std::map<int, double>& available_curves,
+	std::unordered_map<int, int>& current_region, 
+	std::unordered_map<int, int>& current_region_boundary_neighbors,
+	std::vector<int> current_seeds, int min_curvature_index, double segment_threshold_value)
 {
 
 	auto segment_avg = m_NormedMeshCurvedness(min_curvature_index);
@@ -320,5 +294,32 @@ Eigen::Vector3d ObjFragment::localAvgNormal(const std::vector<int>& vertIndexes)
 	return sum / vertIndexes.size();
 }
 
+void ObjFragment::crop(std::vector<int> vertRemainIndexes)
+{
+	//Eigen::MatrixXd newVertices;
+	//Eigen::MatrixXd newTextureCoordinates;
+	//Eigen::MatrixXd newNormals;
+	//Eigen::MatrixXi newFaces;
+	//Eigen::MatrixXi newFaces2TextureCoordinates;
+	//Eigen::MatrixXi newFaces2Normals;
+	////Eigen::MatrixXd newColors;
+	//Eigen::VectorXd newMeshCurvedness;
+	//Eigen::VectorXd newNormedMeshCurvedness;
+	//std::vector<std::vector<int>> newAdjacentVertices;
+	//std::vector <std::vector<int>> newVerticesAdjacentFacesList;
+
+	//double newSize = vertRemainIndexes.size();
+	//newVertices.resize(newSize, 3);
+	//newTextureCoordinates.resize(newSize, 2);
+	//newNormals.resize(newSize, 3);
+	//newMeshCurvedness.resize(newSize);
+	//newNormedMeshCurvedness.resize(newSize);
+
+	//int i = 0;
+	//for (int iVert: vertRemainIndexes)
+	//{
+	//	newVertices.row(i) << (m_Vertices.coeff(iVert, 0), m_Vertices.coeff(iVert, 1) , m_Vertices.coeff(iVert, 2));
+	//}
 
 
+}

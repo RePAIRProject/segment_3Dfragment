@@ -20,7 +20,8 @@ void initSegments(std::vector<Segment>& oSegments, std::map<int, int>& oVertInde
 	}
 }
 
-void sortToSmallAndBigSegments(std::map<int, Segment*>& oSmallSegments, std::map<int, Segment*>& oBigSegments, std::vector<Segment> segments, double minBigSegPercSize)
+void sortToSmallAndBigSegments(std::map<int, Segment*>& oSmallSegments, std::map<int, Segment*>& oBigSegments,
+								std::vector<Segment> &segments, double minBigSegPercSize)
 {
 	for (int iSeg = 0; iSeg < segments.size(); iSeg++)
 	{
