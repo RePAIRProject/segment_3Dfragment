@@ -5,5 +5,5 @@
 #include <Segment.h>
 
 
-void segment_intact_surface(std::vector<std::string> all_args);
-void segment(std::vector<std::string> all_args);
+Segment segment_intact_surface(ObjFragment &fragment, std::string outFileName);
+void segment_opposite_surface(ObjFragment& fragment);

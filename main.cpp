@@ -2,7 +2,8 @@
 #include <string>
 #include <vector>
 #include "Scripts.h"
-
+#include <Fragment.h>
+#include <Segment.h>
 
 
 int main(int argc, char* argv[])
@@ -14,10 +15,14 @@ int main(int argc, char* argv[])
 		all_args.assign(argv + 1, argv + argc);
 	}
 
+	std::string fragmentPath = all_args[0];
+	ObjFragment fragment = ObjFragment(fragmentPath);
+	std::cout << "Loading data" << std::endl;
+	fragment.load();
 
-	//std::string fragmentName = "RPf_00154"; //"cube";
-	//std::string fragmentPath = "..\\fragments\\" + fragmentName + "\\" + fragmentName + ".obj";
-	//std::string outputPath = "..\\fragments\\" + fragmentName + "\\" ;
+	std::string outFileName = all_args[1];
+	std::string isSave = all_args[2];
 
-	segment_intact_surface(all_args);
+	//segment_intact_surface(fragment,outFileName);
+	segment_opposite_surface(fragment);
 }

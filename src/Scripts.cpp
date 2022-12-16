@@ -2,15 +2,8 @@
 #include "Visualization.h"
 #include "ScriptsUtils.h"
 
-void segment_intact_surface(std::vector<std::string> all_args)
+Segment segment_intact_surface(ObjFragment& fragment,std::string outFileName)
 {
-	std::string fragmentPath = all_args[0];
-	std::string outFileName = all_args[1];
-
-
-	ObjFragment fragment = ObjFragment(fragmentPath);
-	std::cout << "Loading data" << std::endl;
-	fragment.load();
 
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
@@ -50,7 +43,6 @@ void segment_intact_surface(std::vector<std::string> all_args)
 		initSegments(segments, vertIndex2SegIndex, oRegionsList, oRegionOutsideBoundaryVerticesList, fragmentSize, fragment);
 		sortToSmallAndBigSegments(smallSegments, bigSegments, segments, minBigSegPercSize);
 
-		//fragment.filterSmallRegions(segments, oRegionsList);
 		std::cout << "In trial: " << nTrials << " Found " << bigSegments.size() << "big Segments" << std::endl;
 
 		if (bigSegments.size() == 0)
@@ -99,16 +91,30 @@ void segment_intact_surface(std::vector<std::string> all_args)
 			isSegmented = true;
 		}
 		else {
-			fracture = fracture - 0.07;
+			fracture = fracture - 0.08;
 		}
 	}
 
-	
-
 	segments[intactIndex].loadBasicData();
-	segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + outFileName);
-	std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
+	
+	if (outFileName != "")
+	{
+		segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + outFileName);
+		std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
+	}
 
+	std::cout << "Return the intact surface" << std::endl;
+	return segments[intactIndex];
+}
+
+void segment_opposite_surface(ObjFragment& fragment)
+{
+	Segment intactSegment = segment_intact_surface(fragment,"");
+
+	if (true)
+	{
+
+	}
 }
 
 //void segment(std::vector<std::string> all_args)
