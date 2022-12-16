@@ -37,6 +37,27 @@ void sortToSmallAndBigSegments(std::map<int, Segment*>& oSmallSegments, std::map
 	}
 }
 
+void merge(int iSrcSeg, int iDstSeg, std::map<int, int> &vertIndex2SegIndex,
+			std::map<int, Segment*> &srcSegPool, std::map<int, Segment*> &dstSegPool)
+{
+	for (int iVert : srcSegPool.at(iSrcSeg)->piece_vertices_index_)
+	{
+		vertIndex2SegIndex[iVert] = iDstSeg;
+	}
+
+	dstSegPool.at(iDstSeg)->piece_vertices_index_.insert(
+		dstSegPool.at(iDstSeg)->piece_vertices_index_.end(),
+		srcSegPool.at(iSrcSeg)->piece_vertices_index_.begin(),
+		srcSegPool.at(iSrcSeg)->piece_vertices_index_.end()
+	);
+		
+	dstSegPool.at(iDstSeg)->m_OutsideBoundaryVertsIndexes.insert(
+		dstSegPool.at(iDstSeg)->m_OutsideBoundaryVertsIndexes.end(),
+		srcSegPool.at(iSrcSeg)->m_OutsideBoundaryVertsIndexes.begin(),
+		srcSegPool.at(iSrcSeg)->m_OutsideBoundaryVertsIndexes.end()
+	);
+}
+
 Eigen::Vector3d calcAvg(const std::vector<Eigen::Vector3d>& vectors)
 {
 
