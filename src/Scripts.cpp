@@ -74,7 +74,6 @@ void segment_intact_surface(std::vector<std::string> all_args)
 	}
 
 	int intactIndex = -1; 
-	
 	double minMeanCurvedness = 9999999;
 	int k = 0;
 	
@@ -85,7 +84,6 @@ void segment_intact_surface(std::vector<std::string> all_args)
 		{
 			segCurvedness += fragment.m_NormedMeshCurvedness[verIndex];
 		}
-	
 	
 		double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
 	

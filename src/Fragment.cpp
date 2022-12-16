@@ -27,8 +27,10 @@ void ObjFragment::load()
 	Eigen::MatrixXd V;
 	igl::readOBJ(m_filePath, V, m_TextureCoordinates, 
 		m_Normals, m_Faces, m_Faces2TextureCoordinates, m_Faces2Normals);
-	m_FolderPath = m_filePath.substr(0, m_filePath.find_last_of("/\\"));
-
+	size_t found = m_filePath.find_last_of("/\\");
+	m_FolderPath = m_filePath.substr(0, found);
+	std::string fileName = m_filePath.substr(found + 1);
+	m_Name = fileName.substr(0, fileName.find_last_of("."));
 
 	m_Vertices = V.block(0, 0, V.rows(), 3);
 	m_Colors = V.block(0, 3, V.rows(), 3); // when playing the cub file it is seems to be meaningless
@@ -37,24 +39,29 @@ void ObjFragment::load()
 	igl::vertex_triangle_adjacency(m_Vertices, m_Faces, m_VerticesAdjacentFacesList, _);
 
 
-	/*Eigen::MatrixXd pd1, pd2;
-	Eigen::VectorXd pv1, pv2;
-	igl::principal_curvature(m_Vertices, m_Faces, pd1, pd2, pv1, pv2);
-	m_MeshCurvedness = 0.5*(pv1.array().square() + pv2.array().square()).sqrt();*/
-
-	/*std::ofstream f("..\\fragments\\group_39\\processed\\RPf_00320_curvedness.txt");
-	for (int i = 0; i < m_MeshCurvedness.rows(); ++i) {
-		f << m_MeshCurvedness(i) << '\n';
-	}*/
-
-	std::cout << "Warning you read the curvedness HARDCODED" << std::endl;
-	m_MeshCurvedness.resize(m_Vertices.rows());
-	std::ifstream input("..\\fragments\\group_39\\processed\\RPf_00320_curvedness.txt");
-	int i = 0;
-	for (std::string line; getline(input, line); )
+	std::string curvedPath = m_FolderPath + "\\" + m_Name + "_curvedness.txt";
+	try
 	{
-		m_MeshCurvedness(i) = std::stod(line);
-		++i;
+		std::ifstream input(curvedPath);
+		m_MeshCurvedness.resize(m_Vertices.rows());
+		int i = 0;
+		for (std::string line; getline(input, line); )
+		{
+			m_MeshCurvedness(i) = std::stod(line);
+			++i;
+		}
+	}
+	catch (const std::exception&)
+	{
+		Eigen::MatrixXd pd1, pd2;
+		Eigen::VectorXd pv1, pv2;
+		igl::principal_curvature(m_Vertices, m_Faces, pd1, pd2, pv1, pv2);
+		m_MeshCurvedness = 0.5*(pv1.array().square() + pv2.array().square()).sqrt();
+
+		std::ofstream f(curvedPath);
+		for (int i = 0; i < m_MeshCurvedness.rows(); ++i) {
+			f << m_MeshCurvedness(i) << '\n';
+		}
 	}
 
 
