@@ -97,7 +97,6 @@ double ObjFragment::getSimilarThreshByPos(double fracture)
 	*  fracture - number between 0 to 1
 	*/
 
-	
 	std::vector<double> log_norm_curvedness;
 	log_norm_curvedness.resize(m_NormedMeshCurvedness.size());
 	Eigen::VectorXd::Map(&log_norm_curvedness[0], log_norm_curvedness.size()) = m_NormedMeshCurvedness;
@@ -319,3 +318,6 @@ Eigen::Vector3d ObjFragment::localAvgNormal(const std::vector<int>& vertIndexes)
 
 	return sum / vertIndexes.size();
 }
+
+
+

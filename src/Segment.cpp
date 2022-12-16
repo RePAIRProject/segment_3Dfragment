@@ -4,13 +4,14 @@
 #include <cstdio>
 #include <filesystem>
 
-
-Segment::Segment()
+ObjFragment emptyFrag;
+Segment::Segment():m_ParentFragment(emptyFrag)
 {
 
 }
 
-Segment::Segment(std::vector<int> piece_vertices_index, std::vector<int> piece_vertices_indexes_boundary)
+Segment::Segment(std::vector<int> piece_vertices_index, 
+			std::vector<int> piece_vertices_indexes_boundary,  ObjFragment& parentFragment) : m_ParentFragment(parentFragment)
 {
 	piece_vertices_index_ = piece_vertices_index;
 	m_OutsideBoundaryVertsIndexes = piece_vertices_indexes_boundary;
@@ -23,12 +24,33 @@ double Segment::calcAvgCurvedness()
 	return m_AvgCurvedness;
 }
 
-void Segment::loadBasicData(const std::vector <std::vector<int>>& parentVerticesAdjacentFacesList,
-	const Eigen::MatrixXi& parentFaces, const Eigen::MatrixXd& parentVertices,
-	const Eigen::MatrixXi& parentFaces2TextureCoordinates,
-	const Eigen::MatrixXi& parentFaces2Normals, const Eigen::MatrixXd& parentNormals, std::string fragFilePath)
+
+/// This need to be fixed
+void Segment::loadNormedNormals()
 {
-	m_ParentFilePath = fragFilePath;
+	//m_NormedNormals = Eigen::MatrixXd::Zero(piece_vertices_index_.size(), 3);
+	const Eigen::MatrixXd& parentNormals = m_ParentFragment.m_Normals;
+	for (int vertexIndex : piece_vertices_index_)
+	{
+		Eigen::Vector3d norm = { parentNormals(vertexIndex, 0),
+									parentNormals(vertexIndex, 1),
+										parentNormals(vertexIndex, 2) };
+
+		m_NormedNormals.push_back(norm);
+
+	}
+}
+
+
+void Segment::loadBasicData()
+{
+	const std::vector <std::vector<int>>& parentVerticesAdjacentFacesList = m_ParentFragment.m_VerticesAdjacentFacesList;
+	const Eigen::MatrixXi& parentFaces = m_ParentFragment.m_Faces;
+	const Eigen::MatrixXd& parentVertices = m_ParentFragment.m_Vertices;
+	const Eigen::MatrixXi& parentFaces2TextureCoordinates = m_ParentFragment.m_Faces2TextureCoordinates;
+	const Eigen::MatrixXi& parentFaces2Normals = m_ParentFragment.m_Faces2Normals;
+	const Eigen::MatrixXd& parentNormals = m_ParentFragment.m_Normals;
+	m_ParentFilePath = m_ParentFragment.m_filePath;
 
 	std::set<int> uniqueVerticesIndexes;
 	std::set<int> uniqueFacesIndexes;
@@ -49,7 +71,7 @@ void Segment::loadBasicData(const std::vector <std::vector<int>>& parentVertices
 
 	std::vector<int> FragfacesIndexes_;
 	std::copy(uniqueFacesIndexes.begin(), uniqueFacesIndexes.end(), std::back_inserter(FragfacesIndexes_));
-	std::vector<int>FragVertIndexes_;
+	std::vector<int>FragVertIndexes_; // note: this is not equal size to piece_vertices_index_ (even larger!)
 	std::copy(uniqueVerticesIndexes.begin(), uniqueVerticesIndexes.end(), std::back_inserter(FragVertIndexes_));
 
 	int nSize = FragVertIndexes_.size();
@@ -66,7 +88,7 @@ void Segment::loadBasicData(const std::vector <std::vector<int>>& parentVertices
 		i++;
 	}
 
-	m_Normals.resize(nSize, 3);
+	m_Normals = Eigen::MatrixXd::Zero(nSize, 3); // .resize(nSize, 3);
 
 	i = 0;
 	for (int vertexIndex : FragVertIndexes_)
@@ -102,9 +124,11 @@ void Segment::loadBasicData(const std::vector <std::vector<int>>& parentVertices
 	}
 }
 
-/// its not perfect : access the parameters from inheritence!!
-void Segment::saveAsObj(std::string outputPath, const Eigen::MatrixXd parentNormals,const Eigen::MatrixXd &parentTextureCoordinates)
+void Segment::saveAsObj(std::string outputPath)
 {
+	auto &parentNormals = m_ParentFragment.m_Normals;
+	const Eigen::MatrixXd& parentTextureCoordinates = m_ParentFragment.m_TextureCoordinates;
+
 	std::string tmpFilePath = m_ParentFilePath + ".tmp"; //"..\\fragments\\cube\\cube_igl_tmp.obj";
 	igl::writeOBJ(tmpFilePath, m_Vertices, m_Faces, m_Normals, //parentNormals,
 		m_Faces2Normals, parentTextureCoordinates, m_Faces2TextureCoordinates);

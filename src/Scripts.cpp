@@ -20,11 +20,10 @@ void segment_intact_surface(std::vector<std::string> all_args)
 	std::map<int, Segment*> bigSegments;
 
 	bool isSegmented = false;
-
+	int intactIndex = -1;
 	double fracture = 0.65;
 	double minBigSegPercSize = 0.05;
 	int nTrials = 1;
-
 	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
 
 	while (!isSegmented)
@@ -40,7 +39,7 @@ void segment_intact_surface(std::vector<std::string> all_args)
 		std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
 		fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
 
-		initSegments(segments, vertIndex2SegIndex, oRegionsList, oRegionOutsideBoundaryVerticesList, fragmentSize);
+		initSegments(segments, vertIndex2SegIndex, oRegionsList, oRegionOutsideBoundaryVerticesList, fragmentSize, fragment);
 		sortToSmallAndBigSegments(smallSegments, bigSegments, segments, minBigSegPercSize);
 
 		//fragment.filterSmallRegions(segments, oRegionsList);
@@ -71,57 +70,44 @@ void segment_intact_surface(std::vector<std::string> all_args)
 			std::exit(1);
 		}
 
+		intactIndex = -1;
+		double minMeanCurvedness = 9999999;
+		int k = 0;
+
+		for (Segment& seg : segments)
+		{
+			double segCurvedness = 0;
+			for (int verIndex : seg.piece_vertices_index_)
+			{
+				segCurvedness += fragment.m_NormedMeshCurvedness[verIndex];
+			}
+
+			double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
+
+			if (segAvgCur < minMeanCurvedness)
+			{
+				minMeanCurvedness = segAvgCur;
+				intactIndex = k;
+			}
+
+			++k;
+		}
+
+		// the computation is from fragment class because I don't want to load all the basic data to 
+		// heavy on the memory (?)
+
+
+		segments[intactIndex].loadNormedNormals();
+		Eigen::Vector3d avgNormal = calcAvg(segments[intactIndex].m_NormedNormals);
+
 	}
 
-	int intactIndex = -1; 
-	double minMeanCurvedness = 9999999;
-	int k = 0;
 	
-	for (Segment& seg : segments)
-	{
-		double segCurvedness = 0;
-		for (int verIndex : seg.piece_vertices_index_)
-		{
-			segCurvedness += fragment.m_NormedMeshCurvedness[verIndex];
-		}
-	
-		double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
-	
-		if (segAvgCur < minMeanCurvedness)
-		{
-			minMeanCurvedness = segAvgCur;
-			intactIndex = k;
-		}
-	
-		++k;
-	}
 
-	segments[intactIndex].loadBasicData(fragment.m_VerticesAdjacentFacesList,
-		fragment.m_Faces, fragment.m_Vertices,
-		fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals,fragment.m_Normals,fragment.m_filePath);
-	segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + outFileName, fragment.m_Normals,fragment.m_TextureCoordinates);
+	segments[intactIndex].loadBasicData();
+	segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + outFileName);
 	std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
 
-	//std::map<int, double> segmentsAvgCurvedness;
-	//for (auto it = bigSegments.begin(); it != bigSegments.end(); it++)
-	//{
-	//	it->second->loadBasicData();
-	//	segmentsAvgCurvedness.insert({ it->first, it->second->calcAvgCurvedness() });
-	//}
-
-
-
-	//intactSurface.loadBasicData(fragment.m_VerticesAdjacentFacesList,
-	//							fragment.m_Faces, fragment.m_Vertices,
-	//							fragment.m_Faces2TextureCoordinates, fragment.m_Faces2Normals);
-
-	
-	//fragment.saveAsObj(fragment.m_FolderPath+ "\\" + outFileName, intactSurface);
-	//std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
-
-
-	// For debug:
-	
 }
 
 //void segment(std::vector<std::string> all_args)

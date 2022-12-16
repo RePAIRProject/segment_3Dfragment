@@ -4,11 +4,11 @@
 void initSegments(std::vector<Segment>& oSegments, std::map<int, int>& oVertIndex2SegIndex,
 	const std::vector<std::vector<int>>& oRegionsList,
 	const std::vector<std::vector<int>>& oRegionOutsideBoundaryVerticesList,
-	double fragmentSize)
+	double fragmentSize, ObjFragment& parentFragment)
 {
 	for (int iSeg = 0; iSeg < oRegionsList.size(); iSeg++)
 	{
-		Segment currSeg(oRegionsList[iSeg], oRegionOutsideBoundaryVerticesList[iSeg]);
+		Segment currSeg(oRegionsList[iSeg], oRegionOutsideBoundaryVerticesList[iSeg],parentFragment);
 		currSeg.m_fracSizeOfFragment = static_cast<double>(currSeg.piece_vertices_index_.size())/fragmentSize;
 
 		for (int jVert = 0; jVert < oRegionsList[iSeg].size(); jVert++)
@@ -36,4 +36,14 @@ void sortToSmallAndBigSegments(std::map<int, Segment*>& oSmallSegments, std::map
 	}
 }
 
-//TODO: is this method should be in the segment class? If so I need to load the vertices
+Eigen::Vector3d calcAvg(const std::vector<Eigen::Vector3d>& vectors)
+{
+
+	Eigen::Vector3d sum = Eigen::Vector3d::Zero();
+	for (auto &vecIt : vectors)
+	{
+		sum = sum + vecIt;
+	}
+
+	return sum / vectors.size();
+}

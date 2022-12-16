@@ -14,8 +14,11 @@ public:
 	double m_fracSizeOfFragment;
 	double m_AvgCurvedness;
 	std::string m_ParentFilePath;
+	std::vector<Eigen::Vector3d> m_NormedNormals;
+	ObjFragment& m_ParentFragment;
 
-	Segment(std::vector<int> piece_vertices_index, std::vector<int> piece_vertices_indexes_boundary);
+
+	Segment(std::vector<int> piece_vertices_index, std::vector<int> piece_vertices_indexes_boundary,ObjFragment& parentFragment);
 
 	Segment(Eigen::MatrixXd V, Eigen::MatrixXd  TC, Eigen::MatrixXd N,
 		Eigen::MatrixXi F, Eigen::MatrixXi  FTC, Eigen::MatrixXi FN);
@@ -30,13 +33,12 @@ public:
 
 
 	// send the parameters as const ? 
-	void loadBasicData(const std::vector <std::vector<int>>& parentVerticesAdjacentFacesList,
-		const Eigen::MatrixXi& parentFaces, const Eigen::MatrixXd& parentVertices,
-		const Eigen::MatrixXi& parentFaces2TextureCoordinates,
-		const Eigen::MatrixXi& parentFaces2Normals, const Eigen::MatrixXd& parentNormals, std::string fragFilePath);
+	void loadBasicData();
+
+	void loadNormedNormals();
 
 	double calcAvgCurvedness();
-	void saveAsObj(std::string outputPath, const Eigen::MatrixXd parentNormals, const Eigen::MatrixXd& parentTextureCoordinates);
+	void saveAsObj(std::string outputPath);
 
 
 };
