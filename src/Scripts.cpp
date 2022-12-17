@@ -145,6 +145,9 @@ void segment_opposite_surface(ObjFragment& fragment)
 	colorFrag(rawBigSegmentColors, bigSegments, meshColors.begin());
 	Eigen::MatrixXd rawSegmentsColors = rawBigSegmentColors;
 	colorFrag(rawSegmentsColors, smallSegments, std::next(meshColors.begin(), bigSegments.size()));
+	mergeSmall2BigSegments(smallSegments, bigSegments, vertIndex2SegIndex);
+	Eigen::MatrixXd afterBig2SmallColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	colorFrag(afterBig2SmallColors, bigSegments, meshColors.begin());
 
 	Eigen::Vector3d intactAvgNormal = calcAvg(intactSegment.m_NormedNormals);
 	std::map<int, Segment*> oppositeSegSeeds;
@@ -193,7 +196,7 @@ void segment_opposite_surface(ObjFragment& fragment)
 	std::map<int, int> iNeigh2Count;
 	oppSegIt->second->findNeighbors(iNeigh2Count, vertIndex2SegIndex, oppSegIt->first);
 	segMergedIndexes.clear();
-	double ABUTTING_PERCENTAGE = 0.6;
+	double ABUTTING_PERCENTAGE = 0;
 
 	for (auto it = iNeigh2Count.begin(); it != iNeigh2Count.end(); it++)
 	{
@@ -203,9 +206,8 @@ void segment_opposite_surface(ObjFragment& fragment)
 		{
 			segMergedIndexes.push_back(it->first);
 
-			/*
-				For debugging - this should be implemted in function
-			*/
+			
+			// For debugging 
 			colorFragSingleSeg(oppSegment2Colors, segments[it->first], colorIt);
 			++colorIt;
 
@@ -253,15 +255,18 @@ void segment_opposite_surface(ObjFragment& fragment)
 			visualizer.m_Viewer.data().set_colors(rawBigSegmentColors);
 			std::cout << "Pressed 3, present only the big segments" << std::endl;
 			break;
-
-		case '4': 
-			visualizer.m_Viewer.data().set_colors(oppSegmentSeedColors);
+		case '4':
+			visualizer.m_Viewer.data().set_colors(afterBig2SmallColors);
 			std::cout << "Pressed 4, present only the big segments" << std::endl;
 			break;
-
-		case '5':
-			visualizer.m_Viewer.data().set_colors(oppSegment2Colors);
+		case '5': 
+			visualizer.m_Viewer.data().set_colors(oppSegmentSeedColors);
 			std::cout << "Pressed 5, present only the big segments" << std::endl;
+			break;
+
+		case '6':
+			visualizer.m_Viewer.data().set_colors(oppSegment2Colors);
+			std::cout << "Pressed 6, present only the big segments" << std::endl;
 			break;
 
 			return false;

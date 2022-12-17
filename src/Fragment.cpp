@@ -294,32 +294,4 @@ Eigen::Vector3d ObjFragment::localAvgNormal(const std::vector<int>& vertIndexes)
 	return sum / vertIndexes.size();
 }
 
-void ObjFragment::crop(std::vector<int> vertRemainIndexes)
-{
-	//Eigen::MatrixXd newVertices;
-	//Eigen::MatrixXd newTextureCoordinates;
-	//Eigen::MatrixXd newNormals;
-	//Eigen::MatrixXi newFaces;
-	//Eigen::MatrixXi newFaces2TextureCoordinates;
-	//Eigen::MatrixXi newFaces2Normals;
-	////Eigen::MatrixXd newColors;
-	//Eigen::VectorXd newMeshCurvedness;
-	//Eigen::VectorXd newNormedMeshCurvedness;
-	//std::vector<std::vector<int>> newAdjacentVertices;
-	//std::vector <std::vector<int>> newVerticesAdjacentFacesList;
 
-	//double newSize = vertRemainIndexes.size();
-	//newVertices.resize(newSize, 3);
-	//newTextureCoordinates.resize(newSize, 2);
-	//newNormals.resize(newSize, 3);
-	//newMeshCurvedness.resize(newSize);
-	//newNormedMeshCurvedness.resize(newSize);
-
-	//int i = 0;
-	//for (int iVert: vertRemainIndexes)
-	//{
-	//	newVertices.row(i) << (m_Vertices.coeff(iVert, 0), m_Vertices.coeff(iVert, 1) , m_Vertices.coeff(iVert, 2));
-	//}
-
-
-}

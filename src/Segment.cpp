@@ -225,5 +225,3 @@ void colorFragSingleSeg(Eigen::MatrixXd& oColors, Segment& segment, std::map<int
 		oColors.row(segment.piece_vertices_index_[i]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
 	}
 }
-
-

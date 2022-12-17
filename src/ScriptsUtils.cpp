@@ -58,6 +58,82 @@ void merge(int iSrcSeg, int iDstSeg, std::map<int, int> &vertIndex2SegIndex,
 	);
 }
 
+
+
+void mergeSmall2BigSegments(std::map<int, Segment*> &smallSegments,std::map<int, Segment*> &bigSegments, 
+							std::map<int, int>& vertIndex2SegIndex)
+{
+	int nLastFreeDebug = 0;
+	std::set<int> ixCurrSegBigNeigh;
+	std::set<int> ixCurrSegSmallNeigh;
+	std::map<int, int> segSrc2segDst;
+
+	while (!smallSegments.empty()) //debugIter++ < 1()
+	{
+		
+		if (nLastFreeDebug == smallSegments.size())
+		{
+			std::cout << "WARNING: mergeSmall2BigSegments function did not converged after " << std::endl;
+			break;
+		}
+		nLastFreeDebug = smallSegments.size();
+
+		//std::cout << "WARNING: merge only for a single big segment" << std::endl;
+		//for (auto bigSegIt = std::next(bigSegments.begin(), ixMaxSize_debug); bigSegIt != std::next(bigSegments.begin(), ixMaxSize_debug+1); bigSegIt++)//bigSegments.end()
+		for (auto bigSegIt = bigSegments.begin(); bigSegIt != bigSegments.end(); bigSegIt++)//bigSegments.end()
+		{			
+			/*
+				Compute the neighboors segments
+			*/
+			for (int iVertBoundary : bigSegIt->second->m_OutsideBoundaryVertsIndexes)
+			{
+				int iNeighboorSeg = vertIndex2SegIndex[iVertBoundary];
+
+				if (bigSegments.count(iNeighboorSeg) > 0)
+				{
+					ixCurrSegBigNeigh.insert(iNeighboorSeg);
+				}
+				else
+				{
+					ixCurrSegSmallNeigh.insert(iNeighboorSeg);
+				}
+			}
+
+			for (std::set<int>::iterator itSmallNeigh = ixCurrSegSmallNeigh.begin(); itSmallNeigh != ixCurrSegSmallNeigh.end(); itSmallNeigh++)
+			{
+				segSrc2segDst[*itSmallNeigh] = bigSegIt->first;
+			}
+			
+
+			ixCurrSegBigNeigh.clear();
+			ixCurrSegSmallNeigh.clear();
+		}
+
+		/*
+			Merging
+		*/
+		for (std::map<int,int>::iterator itSegSrc2Dst = segSrc2segDst.begin(); itSegSrc2Dst !=segSrc2segDst.end();++itSegSrc2Dst)
+		{
+			int iSrcSeg = itSegSrc2Dst->first;
+			int iDstSeg = itSegSrc2Dst->second;
+
+			
+			if (smallSegments.count(iSrcSeg) > 0)
+			{
+				merge(iSrcSeg, iDstSeg, vertIndex2SegIndex, smallSegments, bigSegments);
+
+			}
+		}
+
+		for (std::map<int, int>::iterator itSrc2Dst = segSrc2segDst.begin(); itSrc2Dst != segSrc2segDst.end(); ++itSrc2Dst)
+		{
+			smallSegments.erase(itSrc2Dst->first);
+		}
+		segSrc2segDst.clear();
+	}
+}
+
+
 Eigen::Vector3d calcAvg(const std::vector<Eigen::Vector3d>& vectors)
 {
 
