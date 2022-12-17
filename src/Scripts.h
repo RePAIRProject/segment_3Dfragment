@@ -7,3 +7,4 @@
 
 Segment segment_intact_surface(ObjFragment &fragment, std::string outFileName);
 void segment_opposite_surface(ObjFragment& fragment);
+void segment_sidewalls_surface(ObjFragment& fragment);

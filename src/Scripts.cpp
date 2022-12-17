@@ -81,9 +81,10 @@ Segment segment_intact_surface(ObjFragment& fragment,std::string outFileName)
 			++k;
 		}
 
-		segments[intactIndex].loadNormedNormals();
-		Eigen::Vector3d avgNormal = calcAvg(segments[intactIndex].m_NormedNormals);
-		Eigen::Vector3d stdNormal = calcVariance(segments[intactIndex].m_NormedNormals, avgNormal).array().sqrt();
+		Segment& intactSurface = segments[intactIndex];
+		intactSurface.loadNormedNormals();
+		Eigen::Vector3d avgNormal = calcAvg(intactSurface.m_NormedNormals);
+		Eigen::Vector3d stdNormal = calcVariance(intactSurface.m_NormedNormals, avgNormal).array().sqrt();
 		double l2 = stdNormal.norm();
 
 		if (l2 < 0.2)
@@ -111,16 +112,6 @@ void segment_opposite_surface(ObjFragment& fragment)
 {
 	Segment intactSegment = segment_intact_surface(fragment, "");
 
-	std::vector<int> notIntactIndexex;
-	auto& intactVertIndexes = intactSegment.piece_vertices_index_;
-	for (int i = 0; i < fragment.m_Vertices.size(); i++)
-	{
-		if (std::find(intactVertIndexes.begin(), intactVertIndexes.end(), i) == intactVertIndexes.end())
-		{
-			notIntactIndexex.push_back(i);
-		}
-	}
-
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
 	std::map<int, int> vertIndex2SegIndex;
@@ -141,13 +132,14 @@ void segment_opposite_surface(ObjFragment& fragment)
 	std::map<int, Eigen::RowVector3d> meshColors;
 	visualizer.generateRandomColors(meshColors, oRegionsList.size());
 	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, meshColors[0]);
+
 	Eigen::MatrixXd rawBigSegmentColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorFrag(rawBigSegmentColors, bigSegments, meshColors.begin());
 	Eigen::MatrixXd rawSegmentsColors = rawBigSegmentColors;
 	colorFrag(rawSegmentsColors, smallSegments, std::next(meshColors.begin(), bigSegments.size()));
-	mergeSmall2BigSegments(smallSegments, bigSegments, vertIndex2SegIndex);
+	//mergeSmall2BigSegments(smallSegments, bigSegments, vertIndex2SegIndex);
 	Eigen::MatrixXd afterBig2SmallColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
-	colorFrag(afterBig2SmallColors, bigSegments, meshColors.begin());
+	//colorFrag(afterBig2SmallColors, bigSegments, meshColors.begin());
 
 	Eigen::Vector3d intactAvgNormal = calcAvg(intactSegment.m_NormedNormals);
 	std::map<int, Segment*> oppositeSegSeeds;
@@ -196,13 +188,13 @@ void segment_opposite_surface(ObjFragment& fragment)
 	std::map<int, int> iNeigh2Count;
 	oppSegIt->second->findNeighbors(iNeigh2Count, vertIndex2SegIndex, oppSegIt->first);
 	segMergedIndexes.clear();
-	double ABUTTING_PERCENTAGE = 0;
+	double ABUTTING_PERCENTAGE = 0.1; //0.05; // we have a bug on updating the abutting so the thresh is low
 
 	for (auto it = iNeigh2Count.begin(); it != iNeigh2Count.end(); it++)
 	{
-		int segBoundarySize = segments[it->first].m_OutsideBoundaryVertsIndexes.size();
-
-		if (static_cast<double>(it->second) / segBoundarySize > ABUTTING_PERCENTAGE)
+		int segBoundarySize = segments[it->first].m_OutsideBoundaryVertsIndexes.size(); 
+		double abuttingPercentage = it->second / static_cast<double>(segBoundarySize);
+		if (abuttingPercentage > ABUTTING_PERCENTAGE)
 		{
 			segMergedIndexes.push_back(it->first);
 
@@ -267,6 +259,73 @@ void segment_opposite_surface(ObjFragment& fragment)
 		case '6':
 			visualizer.m_Viewer.data().set_colors(oppSegment2Colors);
 			std::cout << "Pressed 6, present only the big segments" << std::endl;
+			break;
+
+			return false;
+		};
+
+	};
+	visualizer.launch();
+
+}
+
+
+
+void segment_sidewalls_surface(ObjFragment& fragment)
+{
+	Segment intactSegment = segment_intact_surface(fragment, "");
+
+	std::vector<std::vector<int>> oRegionsList;
+	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
+	std::map<int, int> vertIndex2SegIndex;
+	std::vector<Segment> segments;
+	std::map<int, Segment*> smallSegments;
+	std::map<int, Segment*> bigSegments;
+	double fracture = 0.45;
+	double minBigSegPercSize = 0.000125;
+	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
+
+	double simThresh = fragment.getSimilarThreshByPos(fracture);
+	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
+	fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
+	initSegments(segments, vertIndex2SegIndex, oRegionsList, oRegionOutsideBoundaryVerticesList, fragmentSize, fragment);
+	sortToSmallAndBigSegments(smallSegments, bigSegments, segments, minBigSegPercSize);
+
+	Visualizer visualizer;
+	std::map<int, Eigen::RowVector3d> meshColors;
+	visualizer.generateRandomColors(meshColors, oRegionsList.size());
+	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, meshColors[0]);
+
+	Eigen::MatrixXd rawBigSegmentColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	colorFrag(rawBigSegmentColors, bigSegments, meshColors.begin());
+	Eigen::MatrixXd rawSegmentsColors = rawBigSegmentColors;
+	colorFrag(rawSegmentsColors, smallSegments, std::next(meshColors.begin(), bigSegments.size()));
+	mergeSmall2BigSegments(smallSegments, bigSegments, vertIndex2SegIndex);
+	Eigen::MatrixXd afterBig2SmallColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	colorFrag(afterBig2SmallColors, bigSegments, meshColors.begin());
+
+	visualizer.m_Viewer.callback_key_down =
+		[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
+	{
+
+		switch (key) {
+		case '1':
+			visualizer.m_Viewer.data().set_colors(fragment.m_Colors);//meshColors[0]
+			std::cout << "Pressed 1" << std::endl;
+			break;
+
+		case '2':
+			visualizer.m_Viewer.data().set_colors(rawSegmentsColors);//meshColors[0]
+			std::cout << "Pressed 2" << std::endl;
+			break;
+
+		case '3':
+			visualizer.m_Viewer.data().set_colors(rawBigSegmentColors);
+			std::cout << "Pressed 3, present only the big segments" << std::endl;
+			break;
+		case '4':
+			visualizer.m_Viewer.data().set_colors(afterBig2SmallColors);
+			std::cout << "Pressed 4, present only the big segments" << std::endl;
 			break;
 
 			return false;

@@ -24,5 +24,6 @@ int main(int argc, char* argv[])
 	std::string isSave = all_args[2];
 
 	//segment_intact_surface(fragment,outFileName);
-	segment_opposite_surface(fragment);
+	//segment_opposite_surface(fragment);
+	segment_sidewalls_surface(fragment);
 }

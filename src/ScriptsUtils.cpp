@@ -121,7 +121,6 @@ void mergeSmall2BigSegments(std::map<int, Segment*> &smallSegments,std::map<int,
 			if (smallSegments.count(iSrcSeg) > 0)
 			{
 				merge(iSrcSeg, iDstSeg, vertIndex2SegIndex, smallSegments, bigSegments);
-
 			}
 		}
 
