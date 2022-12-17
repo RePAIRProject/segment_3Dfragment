@@ -40,7 +40,8 @@ public:
 	double calcAvgCurvedness();
 	void saveAsObj(std::string outputPath);
 
-
+	void findNeighbors(std::map<int, int>& iNeigh2Count, const std::map<int, int>& vertIndex2SegIndex, int iSegItself);
 };
 
 void colorFrag(Eigen::MatrixXd& oColors, const std::map<int, Segment*>& segments, std::map<int, Eigen::RowVector3d>::iterator& colorIt);
+void colorFragSingleSeg(Eigen::MatrixXd& oColors, Segment& segment, std::map<int, Eigen::RowVector3d>::iterator& colorIt);

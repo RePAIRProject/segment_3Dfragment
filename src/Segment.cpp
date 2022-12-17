@@ -172,6 +172,31 @@ void Segment::saveAsObj(std::string outputPath)
 	std::filesystem::remove(tmpFilePath);
 }
 
+
+void Segment::findNeighbors(std::map<int,int>& iNeigh2Count, const std::map<int, int>& vertIndex2SegIndex, int iSegItself)
+{
+	/*
+		Compute the neighboors segments
+	*/
+
+	for (int iVertBoundary : m_OutsideBoundaryVertsIndexes)
+	{
+		int iNeighboorSeg = vertIndex2SegIndex.at(iVertBoundary);
+
+		// becuase how we did the merge
+		if (iSegItself != iNeighboorSeg)
+		{
+
+			if (iNeigh2Count.count(iNeighboorSeg) == 0)
+			{
+				iNeigh2Count[iNeighboorSeg] == 0;
+			}
+
+			iNeigh2Count[iNeighboorSeg] = iNeigh2Count[iNeighboorSeg] +1;
+		}
+	}
+}
+
 void colorFrag(Eigen::MatrixXd &oColors,const std::map<int, Segment*>& segments,
 				std::map<int, Eigen::RowVector3d>::iterator& colorIt)
 {
@@ -179,13 +204,26 @@ void colorFrag(Eigen::MatrixXd &oColors,const std::map<int, Segment*>& segments,
 	for (auto &it = segments.begin(); it != segments.end(); it++)
 	{
 		
-		int segSize = it->second->piece_vertices_index_.size();
-		//std::vector<int>* regionVerticesIndx = it->second.piece_vertices_index_;
-		for (int i = 0; i < segSize; i++)
-		{
-			oColors.row(it->second->piece_vertices_index_[i]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
-		}
+		//int segSize = it->second->piece_vertices_index_.size();
+		////std::vector<int>* regionVerticesIndx = it->second.piece_vertices_index_;
+		//for (int i = 0; i < segSize; i++)
+		//{
+		//	oColors.row(it->second->piece_vertices_index_[i]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+		//}
+
+		colorFragSingleSeg(oColors, *it->second, colorIt);
 
 		colorIt++;
 	}
 }
+
+void colorFragSingleSeg(Eigen::MatrixXd& oColors, Segment& segment, std::map<int, Eigen::RowVector3d>::iterator& colorIt)
+{
+	int segSize = segment.piece_vertices_index_.size();
+	for (int i = 0; i < segSize; i++)
+	{
+		oColors.row(segment.piece_vertices_index_[i]) << colorIt->second.coeff(0), colorIt->second.coeff(1), colorIt->second.coeff(2), 1;
+	}
+}
+
+

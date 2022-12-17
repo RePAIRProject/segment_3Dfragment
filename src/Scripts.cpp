@@ -148,14 +148,14 @@ void segment_opposite_surface(ObjFragment& fragment)
 
 	Eigen::Vector3d intactAvgNormal = calcAvg(intactSegment.m_NormedNormals);
 	std::map<int, Segment*> oppositeSegSeeds;
-	double epsilonErr = 0.2;
+	double EPSILONERR = 0.2;
 
 	for (int i=0;i< segments.size();++i)
 	{
 		segments[i].loadNormedNormals();
 		Eigen::Vector3d currSegAvg = calcAvg(segments[i].m_NormedNormals);
 
-		if (currSegAvg.dot(intactAvgNormal) < -(1 - epsilonErr))
+		if (currSegAvg.dot(intactAvgNormal) < -(1 - EPSILONERR))
 		{
 			oppositeSegSeeds.insert({ i,&segments[i]});
 		}
@@ -174,6 +174,7 @@ void segment_opposite_surface(ObjFragment& fragment)
 
 	for (int i=0; i < segMergedIndexes.size(); ++i)
 	{
+
 		oppositeSegSeeds.erase(segMergedIndexes[i]);
 		if (smallSegments.count(segMergedIndexes[i]) > 0)
 		{
@@ -184,9 +185,53 @@ void segment_opposite_surface(ObjFragment& fragment)
 			bigSegments.erase(segMergedIndexes[i]);
 		}
 	}
-
+	
+	auto colorIt = meshColors.begin();
 	Eigen::MatrixXd oppSegment2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
-	colorFrag(oppSegment2Colors, oppositeSegSeeds, meshColors.begin());
+	colorFrag(oppSegment2Colors, oppositeSegSeeds, colorIt);
+
+	std::map<int, int> iNeigh2Count;
+	oppSegIt->second->findNeighbors(iNeigh2Count, vertIndex2SegIndex, oppSegIt->first);
+	segMergedIndexes.clear();
+	double ABUTTING_PERCENTAGE = 0.6;
+
+	for (auto it = iNeigh2Count.begin(); it != iNeigh2Count.end(); it++)
+	{
+		int segBoundarySize = segments[it->first].m_OutsideBoundaryVertsIndexes.size();
+
+		if (static_cast<double>(it->second) / segBoundarySize > ABUTTING_PERCENTAGE)
+		{
+			segMergedIndexes.push_back(it->first);
+
+			/*
+				For debugging - this should be implemted in function
+			*/
+			colorFragSingleSeg(oppSegment2Colors, segments[it->first], colorIt);
+			++colorIt;
+
+		}
+
+	}
+
+	
+
+	for (int i = 0; i < segMergedIndexes.size(); ++i)
+	{
+
+		/// This if is just beacue merge is expecting map....
+		if (smallSegments.count(segMergedIndexes[i]) > 0)
+		{
+			merge(segMergedIndexes[i], oppSegIt->first, vertIndex2SegIndex, smallSegments, oppositeSegSeeds);
+			smallSegments.erase(segMergedIndexes[i]);
+		}
+		else
+		{
+			merge(segMergedIndexes[i], oppSegIt->first, vertIndex2SegIndex, bigSegments, oppositeSegSeeds);
+			bigSegments.erase(segMergedIndexes[i]);
+		}
+	}
+
+	
 
 
 	visualizer.m_Viewer.callback_key_down =
@@ -216,7 +261,7 @@ void segment_opposite_surface(ObjFragment& fragment)
 
 		case '5':
 			visualizer.m_Viewer.data().set_colors(oppSegment2Colors);
-			std::cout << "Pressed 4, present only the big segments" << std::endl;
+			std::cout << "Pressed 5, present only the big segments" << std::endl;
 			break;
 
 			return false;
