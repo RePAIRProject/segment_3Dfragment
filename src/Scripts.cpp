@@ -304,6 +304,29 @@ void segment_sidewalls_surface(ObjFragment& fragment)
 	Eigen::MatrixXd afterBig2SmallColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorFrag(afterBig2SmallColors, bigSegments, meshColors.begin());
 
+	Eigen::Vector3d intactAvgNormal = calcAvg(intactSegment.m_NormedNormals);
+	std::map<int, Segment*> sideWallSegSeeds;
+	double EPSILON_ERR = 0.5;
+
+	for (auto &it : bigSegments)
+	{
+		auto& seg = it.second;
+		auto& ix = it.first;
+		seg->loadNormedNormals();
+		Eigen::Vector3d currSegAvg = calcAvg(seg->m_NormedNormals);
+
+		double dotProduct = currSegAvg.dot(intactAvgNormal);
+
+		if ( abs(dotProduct) < EPSILON_ERR)
+		{
+			sideWallSegSeeds.insert(it);
+		}
+	}
+
+	Eigen::MatrixXd wallSegmentSeedColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	colorFrag(wallSegmentSeedColors, sideWallSegSeeds, meshColors.begin());
+
+
 	visualizer.m_Viewer.callback_key_down =
 		[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
 	{
@@ -326,6 +349,10 @@ void segment_sidewalls_surface(ObjFragment& fragment)
 		case '4':
 			visualizer.m_Viewer.data().set_colors(afterBig2SmallColors);
 			std::cout << "Pressed 4, present only the big segments" << std::endl;
+			break;
+		case '5':
+			visualizer.m_Viewer.data().set_colors(wallSegmentSeedColors);
+			std::cout << "Pressed 5, present only the big segments" << std::endl;
 			break;
 
 			return false;
