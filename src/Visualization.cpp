@@ -9,7 +9,7 @@ Visualizer::Visualizer()
 	
 }
 
-void Visualizer::generateRandomColors(std::map<int, Eigen::RowVector3d> &oColors,int numberColors)
+void generateRandomColors(std::map<int, Eigen::RowVector3d> &oColors,int numberColors)
 {
 	for (int i = 0; i < numberColors; i++)
 	{

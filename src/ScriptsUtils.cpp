@@ -58,6 +58,28 @@ void merge(int iSrcSeg, int iDstSeg, std::map<int, int> &vertIndex2SegIndex,
 	);
 }
 
+/*
+	use this overloading
+*/
+void merge(Segment* srcSeg, Segment* dstSeg, int iDstSeg, std::map<int, int>& vertIndex2SegIndex)
+{
+	for (int iVert : srcSeg->piece_vertices_index_)
+	{
+		vertIndex2SegIndex[iVert] = iDstSeg;
+	}
+
+	dstSeg->piece_vertices_index_.insert(
+		dstSeg->piece_vertices_index_.end(),
+		srcSeg->piece_vertices_index_.begin(),
+		srcSeg->piece_vertices_index_.end()
+	);
+
+	dstSeg->m_OutsideBoundaryVertsIndexes.insert(
+		dstSeg->m_OutsideBoundaryVertsIndexes.end(),
+		srcSeg->m_OutsideBoundaryVertsIndexes.begin(),
+		srcSeg->m_OutsideBoundaryVertsIndexes.end()
+	);
+}
 
 
 void mergeSmall2BigSegments(std::map<int, Segment*> &smallSegments,std::map<int, Segment*> &bigSegments, 

@@ -5,6 +5,6 @@
 #include <Segment.h>
 
 
-Segment segment_intact_surface(ObjFragment &fragment, std::string outFileName);
-void segment_opposite_surface(ObjFragment& fragment);
-void segment_sidewalls_surface(ObjFragment& fragment);
+Segment segment_intact_surface(ObjFragment& fragment, bool isSave);
+void segment_opposite_surface(ObjFragment& fragment, bool isSave,bool isVisualizer);
+void segment_sidewalls_surface(ObjFragment& fragment, bool isSave, bool isVisualizer);

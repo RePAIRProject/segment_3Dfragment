@@ -19,11 +19,12 @@ int main(int argc, char* argv[])
 	ObjFragment fragment = ObjFragment(fragmentPath);
 	std::cout << "Loading data" << std::endl;
 	fragment.load();
+	std::cout << "Start script for fragment: " << fragment.m_Name << std::endl;
 
-	std::string outFileName = all_args[1];
-	std::string isSave = all_args[2];
+	//std::string outFileName = all_args[1];
+	//std::string isSave = all_args[2];
 
-	//segment_intact_surface(fragment,outFileName);
-	//segment_opposite_surface(fragment);
-	segment_sidewalls_surface(fragment);
+	segment_intact_surface(fragment,true);
+	//segment_opposite_surface(fragment,true,false);
+	//segment_sidewalls_surface(fragment,true, false);
 }

@@ -1,9 +1,13 @@
 #include "Scripts.h"
 #include "Visualization.h"
 #include "ScriptsUtils.h"
+#include "SpectralClustering.h"
 
-Segment segment_intact_surface(ObjFragment& fragment,std::string outFileName)
+
+Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 {
+
+	std::cout << "**************** segment_intact_surface **************** " << std::endl;
 
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
@@ -17,7 +21,7 @@ Segment segment_intact_surface(ObjFragment& fragment,std::string outFileName)
 
 	bool isSegmented = false;
 	int intactIndex = -1;
-	int nTrials = 1;
+	int nTrials = 0;
 
 	while (!isSegmented)
 	{
@@ -51,11 +55,11 @@ Segment segment_intact_surface(ObjFragment& fragment,std::string outFileName)
 			continue;
 		}
 		
-		if (bigSegments.size() == 1)
+		/*if (bigSegments.size() == 1)
 		{
 			fracture = fracture - 0.12;
 			continue;
-		}
+		}*/
 		
 
 		intactIndex = -1;
@@ -92,15 +96,17 @@ Segment segment_intact_surface(ObjFragment& fragment,std::string outFileName)
 			isSegmented = true;
 		}
 		else {
+			std::cout << "the std of the normals seems to be to much big - continue to segment" << std::endl;
 			fracture = fracture - 0.08;
 		}
 	}
 
 	segments[intactIndex].loadBasicData();
 	
-	if (outFileName != "")
+	if (isSave)
 	{
-		segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + outFileName);
+
+		segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + fragment.m_Name+ "_intact.obj" );
 		std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
 	}
 
@@ -108,9 +114,9 @@ Segment segment_intact_surface(ObjFragment& fragment,std::string outFileName)
 	return segments[intactIndex];
 }
 
-void segment_opposite_surface(ObjFragment& fragment)
+void segment_opposite_surface(ObjFragment& fragment, bool isSave, bool isVisualizer)
 {
-	Segment intactSegment = segment_intact_surface(fragment, "");
+	Segment intactSegment = segment_intact_surface(fragment,isSave);
 
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
@@ -128,10 +134,9 @@ void segment_opposite_surface(ObjFragment& fragment)
 	initSegments(segments, vertIndex2SegIndex, oRegionsList, oRegionOutsideBoundaryVerticesList, fragmentSize, fragment);
 	sortToSmallAndBigSegments(smallSegments, bigSegments, segments, minBigSegPercSize);
 
-	Visualizer visualizer;
 	std::map<int, Eigen::RowVector3d> meshColors;
-	visualizer.generateRandomColors(meshColors, oRegionsList.size());
-	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, meshColors[0]);
+	generateRandomColors(meshColors, oRegionsList.size());
+	
 
 	Eigen::MatrixXd rawBigSegmentColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorFrag(rawBigSegmentColors, bigSegments, meshColors.begin());
@@ -225,55 +230,74 @@ void segment_opposite_surface(ObjFragment& fragment)
 		}
 	}
 
+	if (isSave)
+	{
 	
+		if (oppositeSegSeeds.size() !=1)
+		{
+			std::cout << "Expected oppositeSegSeeds to contain one element but it is empty" << std::endl;
+		}
+		else
+		{
+			auto finalSeg = oppositeSegSeeds.begin()->second;
+			finalSeg->loadBasicData();
+			finalSeg->saveAsObj(fragment.m_FolderPath + "\\" + fragment.m_Name + "_opposite.obj");
+			std::cout << "Write opposite surface successfully the output to path " << fragment.m_FolderPath << std::endl;
+		}
+	}
 
-
-	visualizer.m_Viewer.callback_key_down =
-		[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
+	if (isVisualizer)
 	{
 
-		switch (key) {
-		case '1': 
-			visualizer.m_Viewer.data().set_colors(fragment.m_Colors);//meshColors[0]
-			std::cout << "Pressed 1" << std::endl;
-			break;
 
-		case '2':
-			visualizer.m_Viewer.data().set_colors(rawSegmentsColors);//meshColors[0]
-			std::cout << "Pressed 2" << std::endl;
-			break;
+		Visualizer visualizer;
+		visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, meshColors[0]);
+		visualizer.m_Viewer.callback_key_down =
+			[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
+		{
 
-		case '3': 
-			visualizer.m_Viewer.data().set_colors(rawBigSegmentColors);
-			std::cout << "Pressed 3, present only the big segments" << std::endl;
-			break;
-		case '4':
-			visualizer.m_Viewer.data().set_colors(afterBig2SmallColors);
-			std::cout << "Pressed 4, present only the big segments" << std::endl;
-			break;
-		case '5': 
-			visualizer.m_Viewer.data().set_colors(oppSegmentSeedColors);
-			std::cout << "Pressed 5, present only the big segments" << std::endl;
-			break;
+			switch (key) {
+			case '1':
+				visualizer.m_Viewer.data().set_colors(fragment.m_Colors);//meshColors[0]
+				std::cout << "Pressed 1" << std::endl;
+				break;
 
-		case '6':
-			visualizer.m_Viewer.data().set_colors(oppSegment2Colors);
-			std::cout << "Pressed 6, present only the big segments" << std::endl;
-			break;
+			case '2':
+				visualizer.m_Viewer.data().set_colors(rawSegmentsColors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
 
-			return false;
+			case '3':
+				visualizer.m_Viewer.data().set_colors(rawBigSegmentColors);
+				std::cout << "Pressed 3, present only the big segments" << std::endl;
+				break;
+			case '4':
+				visualizer.m_Viewer.data().set_colors(afterBig2SmallColors);
+				std::cout << "Pressed 4, present only the big segments" << std::endl;
+				break;
+			case '5':
+				visualizer.m_Viewer.data().set_colors(oppSegmentSeedColors);
+				std::cout << "Pressed 5, present only the big segments" << std::endl;
+				break;
+
+			case '6':
+				visualizer.m_Viewer.data().set_colors(oppSegment2Colors);
+				std::cout << "Pressed 6, present only the big segments" << std::endl;
+				break;
+
+				return false;
+			};
+
 		};
-
-	};
-	visualizer.launch();
-
+		visualizer.launch();
+	}
 }
 
 
 
-void segment_sidewalls_surface(ObjFragment& fragment)
+void segment_sidewalls_surface(ObjFragment& fragment, bool isSave, bool isVisualizer)
 {
-	Segment intactSegment = segment_intact_surface(fragment, "");
+	Segment intactSegment = segment_intact_surface(fragment,isSave);
 
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
@@ -281,8 +305,8 @@ void segment_sidewalls_surface(ObjFragment& fragment)
 	std::vector<Segment> segments;
 	std::map<int, Segment*> smallSegments;
 	std::map<int, Segment*> bigSegments;
-	double fracture = 0.45;
-	double minBigSegPercSize = 0.000125;
+	double fracture = 0.5;//0.5;
+	double minBigSegPercSize = (double)1 / 8000; //0.00025;
 	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
 
 	double simThresh = fragment.getSimilarThreshByPos(fracture);
@@ -290,11 +314,9 @@ void segment_sidewalls_surface(ObjFragment& fragment)
 	fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
 	initSegments(segments, vertIndex2SegIndex, oRegionsList, oRegionOutsideBoundaryVerticesList, fragmentSize, fragment);
 	sortToSmallAndBigSegments(smallSegments, bigSegments, segments, minBigSegPercSize);
-
-	Visualizer visualizer;
 	std::map<int, Eigen::RowVector3d> meshColors;
-	visualizer.generateRandomColors(meshColors, oRegionsList.size());
-	visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, meshColors[0]);
+	generateRandomColors(meshColors, oRegionsList.size());
+	
 
 	Eigen::MatrixXd rawBigSegmentColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorFrag(rawBigSegmentColors, bigSegments, meshColors.begin());
@@ -313,9 +335,9 @@ void segment_sidewalls_surface(ObjFragment& fragment)
 		auto& seg = it.second;
 		auto& ix = it.first;
 		seg->loadNormedNormals();
-		Eigen::Vector3d currSegAvg = calcAvg(seg->m_NormedNormals);
+		seg->avgNormedNormal = calcAvg(seg->m_NormedNormals);
 
-		double dotProduct = currSegAvg.dot(intactAvgNormal);
+		double dotProduct = seg->avgNormedNormal.dot(intactAvgNormal);
 
 		if ( abs(dotProduct) < EPSILON_ERR)
 		{
@@ -326,41 +348,135 @@ void segment_sidewalls_surface(ObjFragment& fragment)
 	Eigen::MatrixXd wallSegmentSeedColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorFrag(wallSegmentSeedColors, sideWallSegSeeds, meshColors.begin());
 
+	
+	/*double EPSILON_ERR2 = 0.2;
+	std::map<int, int> segSrc2segDst;
+	std::vector<int> potentialSeeds;
+	std::set<int> mergedAlreadySegIndexes;
+	int nLastSize = -1;
 
-	visualizer.m_Viewer.callback_key_down =
-		[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
+	while(mergedAlreadySegIndexes.size()!=nLastSize)
 	{
+		nLastSize = mergedAlreadySegIndexes.size();
 
-		switch (key) {
-		case '1':
-			visualizer.m_Viewer.data().set_colors(fragment.m_Colors);//meshColors[0]
-			std::cout << "Pressed 1" << std::endl;
-			break;
+		for (auto& itSegSeed : sideWallSegSeeds)
+		{
+			std::map<int, int> iNeigh2Count;
+			auto& currSeg = itSegSeed.second;
+			int currSegSeedIndex = itSegSeed.first;
+			currSeg->findNeighbors(iNeigh2Count, vertIndex2SegIndex, itSegSeed.first);
 
-		case '2':
-			visualizer.m_Viewer.data().set_colors(rawSegmentsColors);//meshColors[0]
-			std::cout << "Pressed 2" << std::endl;
-			break;
 
-		case '3':
-			visualizer.m_Viewer.data().set_colors(rawBigSegmentColors);
-			std::cout << "Pressed 3, present only the big segments" << std::endl;
-			break;
-		case '4':
-			visualizer.m_Viewer.data().set_colors(afterBig2SmallColors);
-			std::cout << "Pressed 4, present only the big segments" << std::endl;
-			break;
-		case '5':
-			visualizer.m_Viewer.data().set_colors(wallSegmentSeedColors);
-			std::cout << "Pressed 5, present only the big segments" << std::endl;
-			break;
+			for (auto& nbr : iNeigh2Count)
+			{
+				if (sideWallSegSeeds.find(nbr.first) != sideWallSegSeeds.end())
+				{
+					if (mergedAlreadySegIndexes.find(nbr.first) == mergedAlreadySegIndexes.end())
+					{
+						auto& nbrSeg = sideWallSegSeeds.at(nbr.first);
+						double dotProduct = currSeg->avgNormedNormal.dot(nbrSeg->avgNormedNormal);
 
-			return false;
+						if (1 - abs(dotProduct) < EPSILON_ERR2)
+						{
+							segSrc2segDst.insert({ currSegSeedIndex ,nbr.first });
+						}
+
+					}
+				}
+			}
+
+			for (std::map<int, int>::iterator itSegSrc2Dst = segSrc2segDst.begin(); itSegSrc2Dst != segSrc2segDst.end(); ++itSegSrc2Dst)
+			{
+				int iSrcSeg = itSegSrc2Dst->first;
+				int iDstSeg = itSegSrc2Dst->second;
+				merge(iSrcSeg, iDstSeg, vertIndex2SegIndex, sideWallSegSeeds, sideWallSegSeeds);
+				currSeg->loadNormedNormals();
+				currSeg->avgNormedNormal = calcAvg(currSeg->m_NormedNormals);
+			}
+
+			for (std::map<int, int>::iterator itSrc2Dst = segSrc2segDst.begin(); itSrc2Dst != segSrc2segDst.end(); ++itSrc2Dst)
+			{
+				mergedAlreadySegIndexes.emplace(itSrc2Dst->first);
+			}
+
+			segSrc2segDst.clear();
+
+		}
+		
+	} 
+
+	*/
+
+	
+	auto firstSeed = sideWallSegSeeds.begin();
+
+	for(auto itSegSeed = std::next(sideWallSegSeeds.begin(),1); itSegSeed!=sideWallSegSeeds.end() ;)
+	{
+		merge(itSegSeed->second, firstSeed->second, firstSeed->first,vertIndex2SegIndex);
+		itSegSeed = sideWallSegSeeds.erase(itSegSeed);
+	}
+
+	if (isSave)
+	{
+		if (sideWallSegSeeds.size() != 1)
+		{
+			std::cout << "Expected sideWallSegSeeds to contain one element but it is empty" << std::endl;
+		}
+		else
+		{
+			auto finalSeg = sideWallSegSeeds.begin()->second;
+			finalSeg->loadBasicData();
+			finalSeg->saveAsObj(fragment.m_FolderPath + "\\" + fragment.m_Name + "_sideWalls.obj");
+			std::cout << "Write side walls surface successfully the output to path " << fragment.m_FolderPath << std::endl;
+		}
+	}
+
+	Eigen::MatrixXd wallSegmentMergeColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	colorFrag(wallSegmentMergeColors, sideWallSegSeeds, meshColors.begin());
+	
+	if (isVisualizer)
+	{
+		Visualizer visualizer;
+
+		visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, meshColors[0]);
+		visualizer.m_Viewer.callback_key_down =
+			[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
+		{
+
+			switch (key) {
+			case '1':
+				visualizer.m_Viewer.data().set_colors(fragment.m_Colors);//meshColors[0]
+				std::cout << "Pressed 1" << std::endl;
+				break;
+
+			case '2':
+				visualizer.m_Viewer.data().set_colors(rawSegmentsColors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+
+			case '3':
+				visualizer.m_Viewer.data().set_colors(rawBigSegmentColors);
+				std::cout << "Pressed 3, present only the big segments" << std::endl;
+				break;
+			case '4':
+				visualizer.m_Viewer.data().set_colors(afterBig2SmallColors);
+				std::cout << "Pressed 4, present only the big segments" << std::endl;
+				break;
+			case '5':
+				visualizer.m_Viewer.data().set_colors(wallSegmentSeedColors);
+				std::cout << "Pressed 5, present only the big segments" << std::endl;
+				break;
+			case '6':
+				visualizer.m_Viewer.data().set_colors(wallSegmentMergeColors);
+				std::cout << "Pressed 5, present only the big segments" << std::endl;
+				break;
+
+				return false;
+			};
+
 		};
-
-	};
-	visualizer.launch();
-
+		visualizer.launch();
+	}
 }
 
 //void segment(std::vector<std::string> all_args)

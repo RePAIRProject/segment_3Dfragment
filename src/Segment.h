@@ -16,6 +16,8 @@ public:
 	std::string m_ParentFilePath;
 	std::vector<Eigen::Vector3d> m_NormedNormals;
 	ObjFragment& m_ParentFragment;
+	Eigen::Vector3d avgNormedNormal;
+	Eigen::Vector3d avgNormal;
 
 
 	Segment(std::vector<int> piece_vertices_index, std::vector<int> piece_vertices_indexes_boundary,ObjFragment& parentFragment);

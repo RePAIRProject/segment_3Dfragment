@@ -13,4 +13,5 @@ void sortToSmallAndBigSegments(std::map<int, Segment*>& oSmallSegments, std::map
 Eigen::Vector3d calcAvg(const std::vector<Eigen::Vector3d>& vectors);
 Eigen::Vector3d calcVariance(const std::vector<Eigen::Vector3d>& vectors, Eigen::Vector3d mean);
 void merge(int iSrcSeg, int iDstSeg, std::map<int, int>& vertIndex2SegIndex, std::map<int, Segment*>& srcSegPool, std::map<int, Segment*>& dstSegPool);
+void merge(Segment* srcSeg, Segment* dstSeg, int iDstSeg, std::map<int, int>& vertIndex2SegIndex);
 void mergeSmall2BigSegments(std::map<int, Segment*>& smallSegments, std::map<int, Segment*>& bigSegments, std::map<int, int>& vertIndex2SegIndex);
