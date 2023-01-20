@@ -91,7 +91,8 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 		Eigen::Vector3d stdNormal = calcVariance(intactSurface.m_NormedNormals, avgNormal).array().sqrt();
 		double l2 = stdNormal.norm();
 
-		if (l2 < 0.2)
+		//if (l2 < 0.2)
+		if (l2 < 0.05)
 		{
 			isSegmented = true;
 		}
