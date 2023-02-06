@@ -18,6 +18,7 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 	double fracture = 0.65;
 	double minBigSegPercSize = 0.05;
 	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
+	double MAX_NUM_TRIALS = 6;
 
 	bool isSegmented = false;
 	int intactIndex = -1;
@@ -25,6 +26,13 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 
 	while (!isSegmented)
 	{
+		if (nTrials >= MAX_NUM_TRIALS)
+		{
+			std::cout << "The number of trials exceeded the number of maximum allocated (" << MAX_NUM_TRIALS << ")" << std::endl;
+			std::cout << "Please rerun mannually..exiting" << std::endl;
+			std::exit(1);
+		}
+
 		if (fracture > 1 || fracture <=0)
 		{
 			std::cout << "fracrure value is " << fracture << " and it should be between 0 to 1" << std::endl;
