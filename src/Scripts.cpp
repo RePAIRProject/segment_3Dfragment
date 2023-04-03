@@ -574,7 +574,7 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 	auto smoothColorIt = meshColors.begin();
 	auto unSmoothColorIt = std::next(meshColors.begin(),45);
 
-	double smooth_threshold = fragment.getSimilarThreshByPos(0.5);
+	double smooth_threshold = fragment.getSimilarThreshByPos(0.25);
 	Eigen::MatrixXd segment2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	Eigen::MatrixXd smooth2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	Eigen::MatrixXd frag2UnionColor = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
@@ -611,6 +611,16 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 	}
 
 	Eigen::MatrixXd vertsCoordsNormalized = fragment.m_Vertices;
+
+	// To enlarge the variance
+	// var(ax) = a**2var(x)
+	double factor = 99999999;
+	for (int i = 0; i < vertsCoordsNormalized.rows(); i++)
+	{
+
+		vertsCoordsNormalized.row(i) << vertsCoordsNormalized.coeff(i, 0) * factor, vertsCoordsNormalized.coeff(i, 1) * factor, vertsCoordsNormalized.coeff(i, 2) * factor;
+	}
+
 	for (int i = 0; i < 3; i++)
 	{
 		vertsCoordsNormalized.col(i).normalize();
@@ -620,9 +630,14 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 	for (int i = 0; i < fragment.m_NormedMeshCurvedness.size(); i++)
 	{
 		double val = fragment.m_NormedMeshCurvedness(i);// * 2;
+		double heightBias = vertsCoordsNormalized.coeff(i,2) * 100; // double 10000 so the numbers will be 0.x and not 0.000x. we have here an assumption that the opposite surface is rotated..
+		//double heightBias = fragment.m_Vertices.coeff(i, 2) * 100; // double 10000 so the numbers will be 0.x and not 0.000x. we have here an assumption that the opposite surface is rotated..
 		//fragVerts2Colors.row(i) << val, val, val,val;
 		//fragVerts2Colors.row(i) << val + vertsCoordsNormalized.coeff(i,2), 0, 0, val;
-		fragVerts2Colors.row(i) << val + vertsCoordsNormalized.coeff(i,0)*10000, 0, 0, val;
+		//fragVerts2Colors.row(i) << val + vertsCoordsNormalized.coeff(i,2)*10000, 0, 0, val;
+		//heightBias = heightBias * heightBias;
+		//fragVerts2Colors.row(i) << heightBias*10, 0, 0, val*heightBias;
+		fragVerts2Colors.row(i) << heightBias, 0, 0, val+heightBias* heightBias* heightBias;
 	}
 
 
