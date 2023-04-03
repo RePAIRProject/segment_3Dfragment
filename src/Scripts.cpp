@@ -15,7 +15,7 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 	std::vector<Segment> segments;
 	std::map<int, Segment*> smallSegments;
 	std::map<int, Segment*> bigSegments;
-	double fracture = 0.65;
+	double fracture = 0.65; //0.65;
 	double minBigSegPercSize = 0.05;
 	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
 	double MAX_NUM_TRIALS = 6;
@@ -74,33 +74,41 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 		double minMeanCurvedness = 9999999;
 		int k = 0;
 
-		for (Segment& seg : segments)
+		//for (Segment& seg : segments)
+		for(auto seg = bigSegments.begin(); seg!= bigSegments.end(); ++seg)
 		{
 			double segCurvedness = 0;
-			for (int verIndex : seg.piece_vertices_index_)
+			//auto piece_vertices_index_ = seg.piece_vertices_index_;
+			auto& piece_vertices_index_ = seg->second->piece_vertices_index_;
+
+
+			for (int verIndex : piece_vertices_index_)
 			{
 				segCurvedness += fragment.m_NormedMeshCurvedness[verIndex];
 			}
 
-			double segAvgCur = segCurvedness / seg.piece_vertices_index_.size();
+			double segAvgCur = segCurvedness / piece_vertices_index_.size();
 
 			if (segAvgCur < minMeanCurvedness)
 			{
 				minMeanCurvedness = segAvgCur;
-				intactIndex = k;
+				intactIndex = seg->first; //k;
 			}
 
 			++k;
 		}
 
 		Segment& intactSurface = segments[intactIndex];
+		//Segment& intactSurface = *bigSegments.at(intactIndex);
 		intactSurface.loadNormedNormals();
 		Eigen::Vector3d avgNormal = calcAvg(intactSurface.m_NormedNormals);
 		Eigen::Vector3d stdNormal = calcVariance(intactSurface.m_NormedNormals, avgNormal).array().sqrt();
 		double l2 = stdNormal.norm();
 
+		if (l2 < 0.2)
 		//if (l2 < 0.2)
-		if (l2 < 0.05)
+		//if (l2 < 0.05)
+		//if (l2 < 0.1)
 		{
 			isSegmented = true;
 		}
@@ -117,6 +125,57 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 
 		segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + fragment.m_Name+ "_intact.obj" );
 		std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
+	}
+
+	bool isVisualizer = false; // Make this function param when refactor
+	if (isVisualizer)
+	{
+		std::map<int, Eigen::RowVector3d> meshColors;
+		generateRandomColors(meshColors, segments.size());
+		
+		auto colorIt = meshColors.begin();
+		Eigen::MatrixXd segment2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+		colorFrag(segment2Colors, smallSegments, colorIt);
+		colorFrag(segment2Colors, bigSegments, colorIt);
+
+		
+		colorIt = meshColors.begin();
+		Eigen::MatrixXd intact2Colors = Eigen::MatrixXd::Ones(fragment.m_Vertices.rows(), 4);
+		std::map<int, Segment*> tmpContainer;
+		tmpContainer.insert({intactIndex,&segments[intactIndex]});
+		colorFrag(intact2Colors, tmpContainer, colorIt);
+
+		colorIt = meshColors.begin();
+		Eigen::MatrixXd bigSegments2Colors = Eigen::MatrixXd::Ones(fragment.m_Vertices.rows(), 4);
+		colorFrag(bigSegments2Colors, bigSegments, colorIt);
+
+		Visualizer visualizer;
+		visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, fragment.m_Colors);
+		visualizer.m_Viewer.callback_key_down =
+			[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
+		{
+
+			switch (key) {
+			case '1':
+				visualizer.m_Viewer.data().set_colors(segment2Colors);//meshColors[0]
+				std::cout << "Pressed 1" << std::endl;
+				break;
+			case '2':
+				visualizer.m_Viewer.data().set_colors(intact2Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+
+			case '3':
+				visualizer.m_Viewer.data().set_colors(bigSegments2Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+
+
+				return false;
+			};
+
+		};
+		visualizer.launch();
 	}
 
 	std::cout << "Return the intact surface" << std::endl;
@@ -487,6 +546,126 @@ void segment_sidewalls_surface(ObjFragment& fragment, bool isSave, bool isVisual
 		visualizer.launch();
 	}
 }
+
+void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
+{
+	/*
+
+		fragment is essentially could be segment ....
+	*/
+	double fracture = 0.2; //0.3; //0.65;
+	std::vector<std::vector<int>> oRegionsList;
+	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
+	std::map<int, int> vertIndex2SegIndex;
+	std::vector<Segment> segments;
+	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
+
+	double simThresh = fragment.getSimilarThreshByPos(fracture);
+	std::cout << "Segment with fracture:" << fracture << " simThresh: " << simThresh << std::endl;
+	fragment.segmentByCurvedness(oRegionsList, oRegionOutsideBoundaryVerticesList, simThresh);
+	initSegments(segments, vertIndex2SegIndex, oRegionsList, oRegionOutsideBoundaryVerticesList, fragmentSize, fragment);
+
+	std::map<int, Eigen::RowVector3d> meshColors;
+	generateRandomColors(meshColors, oRegionsList.size());
+	auto colorIt = meshColors.begin();
+	/*std::map<int, Eigen::RowVector3d> tfiraBlackWhite;
+	tfiraBlackWhite.insert({ 0, { 0,0,0 } });
+	tfiraBlackWhite.insert({ 1, { 0.5,0.5,0.5 } });*/
+	auto smoothColorIt = meshColors.begin();
+	auto unSmoothColorIt = std::next(meshColors.begin(),45);
+
+	double smooth_threshold = fragment.getSimilarThreshByPos(0.5);
+	Eigen::MatrixXd segment2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	Eigen::MatrixXd smooth2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	Eigen::MatrixXd frag2UnionColor = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	int iSeg = 0;
+
+	for (Segment& seg : segments)
+	{
+		/*
+		
+		NOTE THAT THIS IS HARDCODED, YOU HAVE THE SAME FUNCTIONALITY IN SEGMENT INTACT
+		*/
+
+		double segCurvedness = 0;
+		auto& piece_vertices_index_ = seg.piece_vertices_index_;
+
+		for (int verIndex : piece_vertices_index_)
+		{
+			segCurvedness += fragment.m_NormedMeshCurvedness[verIndex];
+		}
+
+		double segAvgCur = segCurvedness / piece_vertices_index_.size();
+
+		if (segAvgCur < smooth_threshold)
+		{
+			colorFragSingleSeg(smooth2Colors, seg, smoothColorIt);
+		}
+		else
+		{
+			colorFragSingleSeg(smooth2Colors, seg, unSmoothColorIt);
+		}
+
+		colorFragSingleSeg(segment2Colors, seg, colorIt++);
+		colorFragSingleSeg(frag2UnionColor, seg, smoothColorIt);
+	}
+
+	Eigen::MatrixXd vertsCoordsNormalized = fragment.m_Vertices;
+	for (int i = 0; i < 3; i++)
+	{
+		vertsCoordsNormalized.col(i).normalize();
+	}
+
+	Eigen::MatrixXd fragVerts2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	for (int i = 0; i < fragment.m_NormedMeshCurvedness.size(); i++)
+	{
+		double val = fragment.m_NormedMeshCurvedness(i);// * 2;
+		//fragVerts2Colors.row(i) << val, val, val,val;
+		//fragVerts2Colors.row(i) << val + vertsCoordsNormalized.coeff(i,2), 0, 0, val;
+		fragVerts2Colors.row(i) << val + vertsCoordsNormalized.coeff(i,0)*10000, 0, 0, val;
+	}
+
+
+	if (isVisualizer)
+	{
+		Visualizer visualizer;
+
+		visualizer.appendMesh(fragment.m_Vertices, fragment.m_Faces, meshColors[0]);
+		visualizer.m_Viewer.callback_key_down =
+			[&](igl::opengl::glfw::Viewer&, unsigned int key, int mod) ->bool
+		{
+
+			switch (key) {
+			case '1':
+				visualizer.m_Viewer.data().set_colors(segment2Colors);//meshColors[0]
+				std::cout << "Pressed 1" << std::endl;
+				break;
+
+			case '2':
+				visualizer.m_Viewer.data().set_colors(smooth2Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+
+			case '3':
+				visualizer.m_Viewer.data().set_colors(frag2UnionColor);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+				return false;
+			
+
+			case '4':
+				visualizer.m_Viewer.data().set_colors(fragVerts2Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+				return false;
+			};
+	
+		};
+		visualizer.launch();
+	}
+}
+
+
 
 //void segment(std::vector<std::string> all_args)
 //{

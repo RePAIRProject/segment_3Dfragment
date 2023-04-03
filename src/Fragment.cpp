@@ -33,7 +33,19 @@ void ObjFragment::load()
 	m_Name = fileName.substr(0, fileName.find_last_of("."));
 
 	m_Vertices = V.block(0, 0, V.rows(), 3);
-	m_Colors = V.block(0, 3, V.rows(), 3); // when playing the cub file it is seems to be meaningless
+	size_t countUnderscore = std::count_if(m_Name.begin(), m_Name.end(), [](char c) {return c == '_'; });
+
+	// WP2 provided us the rgb colors as other columns of vertices, but in processed files might not contain them
+	// If the file has only one underscore, it is the original file wp2 gave us
+	bool isOriginalFragment = countUnderscore == 1;
+	if (isOriginalFragment)
+	{
+		m_Colors = V.block(0, 3, V.rows(), 3); 
+	}
+	
+	
+
+
 	igl::adjacency_list(m_Faces, m_adjacentVertices); //list of lists containing at index i the adjacent vertices of vertex i
 	std::vector < std::vector<int>> _;
 	igl::vertex_triangle_adjacency(m_Vertices, m_Faces, m_VerticesAdjacentFacesList, _);
@@ -59,10 +71,13 @@ void ObjFragment::load()
 		igl::principal_curvature(m_Vertices, m_Faces, pd1, pd2, pv1, pv2);
 		m_MeshCurvedness = 0.5*(pv1.array().square() + pv2.array().square()).sqrt();
 
+		/*if (isOriginalFragment)
+		{*/
 		std::ofstream f(curvedPath);
 		for (int i = 0; i < m_MeshCurvedness.rows(); ++i) {
 			f << m_MeshCurvedness(i) << '\n';
 		}
+		//}
 	}
 
 
