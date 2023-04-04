@@ -66,6 +66,18 @@ void ObjFragment::load()
 	}
 	else
 	{
+
+		/*if (!isOriginalFragment)
+		{
+
+			for (int i = 0; i < 3; i++)
+			{
+				double mean = m_Vertices.col(i).mean();
+				m_Vertices.col(i) = m_Vertices.col(i).array() - mean;
+			}
+		}*/
+
+
 		Eigen::MatrixXd pd1, pd2;
 		Eigen::VectorXd pv1, pv2;
 		igl::principal_curvature(m_Vertices, m_Faces, pd1, pd2, pv1, pv2);

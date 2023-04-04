@@ -610,6 +610,14 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 		colorFragSingleSeg(frag2UnionColor, seg, smoothColorIt);
 	}
 
+	Eigen::MatrixXd vertsCurvdness2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	for (int i = 0; i < fragment.m_NormedMeshCurvedness.size(); i++)
+	{
+		double val = fragment.m_NormedMeshCurvedness(i);
+		vertsCurvdness2Colors.row(i) << val, 0, 0, val;
+	}
+
+
 	Eigen::MatrixXd vertsCoordsNormalized = fragment.m_Vertices;
 
 	// To enlarge the variance
@@ -637,7 +645,48 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 		//fragVerts2Colors.row(i) << val + vertsCoordsNormalized.coeff(i,2)*10000, 0, 0, val;
 		//heightBias = heightBias * heightBias;
 		//fragVerts2Colors.row(i) << heightBias*10, 0, 0, val*heightBias;
-		fragVerts2Colors.row(i) << heightBias, 0, 0, val+heightBias* heightBias* heightBias;
+		//fragVerts2Colors.row(i) << heightBias, 0, 0, val+heightBias* heightBias* heightBias;
+		fragVerts2Colors.row(i) << heightBias, 0, 0, val - heightBias;//* heightBias* heightBias;
+	}
+
+
+	//https://forum.kde.org/viewtopic.php?f=9&t=110265
+	Eigen::MatrixXd fragAligned = fragment.m_Vertices.rowwise() - fragment.m_Vertices.colwise().mean();
+
+	// we can directly take SVD
+	Eigen::JacobiSVD<Eigen::MatrixXd> svd(fragAligned, Eigen::ComputeThinV);
+
+	Eigen::MatrixXd W = svd.matrixV().leftCols(3);
+
+	// then to project the data:
+	Eigen::MatrixXd projected = fragAligned * W; 
+
+	Eigen::MatrixXd fragVertsInSvdcol02Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	Eigen::VectorXd heightNormed = projected.col(0); // hardcoded for RPF_438 group 52
+	//heightNormed = heightNormed.normalized() * 100;
+	fragVertsInSvdcol02Colors.col(0) = heightNormed;
+	fragVertsInSvdcol02Colors.col(3) = heightNormed;
+	
+	Eigen::MatrixXd fragVertsInSvdcol12Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	heightNormed = projected.col(1);
+	heightNormed  = heightNormed.normalized() * -100;
+	fragVertsInSvdcol02Colors.col(0) = heightNormed;
+	fragVertsInSvdcol02Colors.col(3) = heightNormed;
+
+	Eigen::MatrixXd fragVertsInSvdcol22Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	heightNormed = projected.col(2);
+	heightNormed  = heightNormed.normalized() * -100;
+	fragVertsInSvdcol02Colors.col(0) = heightNormed;
+	fragVertsInSvdcol02Colors.col(3) = heightNormed;
+	
+
+	// for RPF_438 group 52
+	Eigen::MatrixXd fragVertsEigenValueHieght2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	for (int i = 0; i < fragment.m_NormedMeshCurvedness.size(); i++)
+	{
+		double val = fragment.m_NormedMeshCurvedness(i);// * 2;
+		
+		fragVerts2Colors.row(i) << val + heightNormed(i), 0, 0,0 ;//* heightBias* heightBias;
 	}
 
 
@@ -667,13 +716,38 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 				break;
 				return false;
 			
-
 			case '4':
+				visualizer.m_Viewer.data().set_colors(vertsCurvdness2Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+
+			case '5':
 				visualizer.m_Viewer.data().set_colors(fragVerts2Colors);//meshColors[0]
 				std::cout << "Pressed 2" << std::endl;
 				break;
+
+			case '6':
+				visualizer.m_Viewer.data().set_colors(fragVertsInSvdcol02Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+			//case '7':
+			//	visualizer.m_Viewer.data().set_colors(fragVertsEigenValueHieght2Colors);//meshColors[0]
+			//	std::cout << "Pressed 2" << std::endl;
+			//	break;
+			case '7':
+				visualizer.m_Viewer.data().set_colors(fragVertsInSvdcol12Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+			case '8':
+				visualizer.m_Viewer.data().set_colors(fragVertsInSvdcol22Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+
+
 				return false;
 			};
+
+			
 	
 		};
 		visualizer.launch();
