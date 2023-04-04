@@ -635,6 +635,7 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 	}
 
 	Eigen::MatrixXd fragVerts2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
+	Eigen::MatrixXd vertsHieghtworldAxis2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	for (int i = 0; i < fragment.m_NormedMeshCurvedness.size(); i++)
 	{
 		double val = fragment.m_NormedMeshCurvedness(i);// * 2;
@@ -647,7 +648,11 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 		//fragVerts2Colors.row(i) << heightBias*10, 0, 0, val*heightBias;
 		//fragVerts2Colors.row(i) << heightBias, 0, 0, val+heightBias* heightBias* heightBias;
 		//fragVerts2Colors.row(i) << heightBias, 0, 0, val - heightBias;//* heightBias* heightBias;
+
+
 		fragVerts2Colors.row(i) << val - heightBias, 0, 0, 1;//* heightBias* heightBias;
+		//fragVerts2Colors.row(i) << val - std::exp(-(1-heightBias + 0.5)), 0, 0, 1;//* heightBias* heightBias;
+		vertsHieghtworldAxis2Colors.row(i) << heightBias, 0, 0, 1;
 	}
 
 
@@ -700,14 +705,16 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 	for (int i = 0; i < fragment.m_NormedMeshCurvedness.size(); i++)
 	{
 		double curv = fragment.m_NormedMeshCurvedness(i);// * 2;
-		//curv *= 1.2;
-		double height = heightNormed_2(i);
-		double downgrade = std::exp(-(height+0.5)); //0.08 * 1/(height);
+		curv *= 1.2;
+		double height = heightNormed_2(i); /// Assume it has the lowest variance
+		double downgrade = std::exp(-(height+0.42)); //0.08 * 1/(height);
 		//double downgrade = std::exp(-(height*1.0001)); //0.08 * 1/(height);
 		double r = curv - downgrade;
 		
 		fragVertsEigenValueHieght2Colors.row(i) << r, 0, 0,1 ;//* heightBias* heightBias;
 	}
+
+	// Maybe here map the height to a wider domain and make an exponential penalty....
 
 
 	if (isVisualizer)
@@ -745,24 +752,30 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 				visualizer.m_Viewer.data().set_colors(fragVerts2Colors);//meshColors[0]
 				std::cout << "Pressed 2" << std::endl;
 				break;
-
+			
 			case '6':
+				visualizer.m_Viewer.data().set_colors(vertsHieghtworldAxis2Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+
+			case '7':
 				visualizer.m_Viewer.data().set_colors(fragVertsInSvdcol02Colors);//meshColors[0]
 				std::cout << "Pressed 2" << std::endl;
 				break;
-			case '7':
+			case '8':
 				visualizer.m_Viewer.data().set_colors(fragVertsInSvdcol12Colors);//meshColors[0]
 				std::cout << "Pressed 2" << std::endl;
 				break;
-			case '8':
+
+			case '9':
 				visualizer.m_Viewer.data().set_colors(fragVertsInSvdcol22Colors);//meshColors[0]
 				std::cout << "Pressed 2" << std::endl;
 				break;
-			case '9':
+			case '0':
 				visualizer.m_Viewer.data().set_colors(fragVertsInSvdcol2Normed2Colors);//meshColors[0]
 				std::cout << "Pressed 2" << std::endl;
 				break;
-			case '0':
+			case '-':
 				visualizer.m_Viewer.data().set_colors(fragVertsEigenValueHieght2Colors);//meshColors[0]
 				std::cout << "Pressed 2" << std::endl;
 				break;
