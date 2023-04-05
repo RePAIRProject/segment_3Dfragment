@@ -180,3 +180,10 @@ Eigen::Vector3d calcVariance(const std::vector<Eigen::Vector3d>& vectors, Eigen:
 
 	return sum / vectors.size();
 }
+
+
+
+double sigmiod(double x)
+{
+	return 1 / (1 + std::exp(-x));
+}

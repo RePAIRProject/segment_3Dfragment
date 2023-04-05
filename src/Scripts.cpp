@@ -691,10 +691,22 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 	
 	Eigen::MatrixXd fragVertsInSvdcol2Normed2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	Eigen::VectorXd heightNormed_2 = projected.col(2);
-	heightNormed_2 = heightNormed_2.normalized() * 10;
+	heightNormed_2 = heightNormed_2.normalized() * 10;//0.xx and not 0.0xx
 	fragVertsInSvdcol2Normed2Colors.col(0) = heightNormed_2;
 	fragVertsInSvdcol2Normed2Colors.col(3) = Eigen::VectorXd::Ones(heightNormed_2.rows());
 	
+	for (int i = 0; i < heightNormed_2.size(); i++)
+	{
+		if (sigmiod(heightNormed_2.coeff(i))>0.5)
+		{
+			fragVertsInSvdcol2Normed2Colors(i, 0) = 1;
+		}
+		else
+		{
+			fragVertsInSvdcol2Normed2Colors(i, 0) = 0;
+		}
+	}
+
 
 	// for RPF_438 group 52
 	Eigen::MatrixXd fragVertsEigenValueHieght2Colors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
@@ -711,6 +723,15 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 		//double downgrade = std::exp(-(height*1.0001)); //0.08 * 1/(height);
 		double r = curv - downgrade;
 		
+		if (sigmiod(r) >= 0.525)
+		{
+			r = 1;
+		}
+		else
+		{
+			r = 0;
+		}
+
 		fragVertsEigenValueHieght2Colors.row(i) << r, 0, 0,1 ;//* heightBias* heightBias;
 	}
 
