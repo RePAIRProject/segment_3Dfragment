@@ -820,26 +820,26 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 		std::string materialName = "material_0";
 		saveMtlFile(mtlPath, imgPath);
 
-		Eigen::MatrixXd textureCoords(fragment.m_Vertices.rows(),2);
-		std::vector<double> epsilons = { 0,0.000001,-0.000001 };
-
-		for (int i = 0; i < textureCoords.rows(); i++)
+		Eigen::MatrixXd textureCoords(fragment.m_Faces.rows()*3,2);
+		
+		for (int i = 0; i < fragment.m_Faces.rows(); i++)
 		{
 			/// Making the face reddit\whiter as the height value increases
-			double reddisht = fragVertsInSvdcol22Colors(i ,0);
-			double eps = epsilons[i % 3];
-			textureCoords.row(i) << eps+0.999999,reddisht;
+			int vert1 = fragment.m_Faces(i, 0);
+			int vert2 = fragment.m_Faces(i, 1);
+			int vert3 = fragment.m_Faces(i, 2);
+			double reddisht = (fragVertsInSvdcol22Colors(vert1, 0) + fragVertsInSvdcol22Colors(vert2, 0) + fragVertsInSvdcol22Colors(vert3, 0))/3;
+			reddisht = reddisht * 0.01; //0.001;
+			textureCoords.row(i+0) << 1.000000 ,reddisht;
+			textureCoords.row(i+1) << 1.0000001 ,reddisht*0.00001;
+			textureCoords.row(i+2) << 1.0000002 ,reddisht;
 		}
 
 		Eigen::MatrixXi face2TextureCoords(fragment.m_Faces.rows(),3);
 
-		for (int i = 0; i < fragment.m_Faces.rows(); i++)
+		for (int i = 0; i < fragment.m_Faces.rows(); i+=1)
 		{
-			int vert1 = fragment.m_Faces(i, 0);
-			int vert2 = fragment.m_Faces(i, 1);
-			int vert3 = fragment.m_Faces(i, 2);
-
-			face2TextureCoords.row(i) << vert1,vert2 ,vert3;
+			face2TextureCoords.row(i) << i,i+1 ,i+2;// The vertex of each face are more 
 		}
 		
 		std::string objPath = fragment.m_FolderPath + "\\" + fragment.m_Name + "_bambooMap.obj";
