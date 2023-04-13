@@ -181,9 +181,56 @@ Eigen::Vector3d calcVariance(const std::vector<Eigen::Vector3d>& vectors, Eigen:
 	return sum / vectors.size();
 }
 
-
-
 double sigmiod(double x)
 {
 	return 1 / (1 + std::exp(-x));
+}
+
+void saveMtlFile(std::string outPath, std::string img, std::string materialName)
+{
+	std::ofstream outFile(outPath);
+	outFile << "# Generated with segment_3Dfragment project \n";
+
+	/*
+		Currently we supporting only this material options because they are default across all framents
+	*/
+
+	outFile << "newmtl " << materialName << "\n";
+	outFile << "Ka 0.200000 0.200000 0.200000\n";
+	outFile << "Kd 1.000000 1.000000 1.000000\n";
+	outFile << "Ks 1.000000 1.000000 1.000000\n";
+	outFile << "Tr 1.000000\n";
+	outFile << "illum 2\n";
+	outFile << "Ns 0.000000\n";
+	outFile << "map_Kd " << img << "\n";
+
+}
+
+void saveObjFile(std::string outObjPath, std::string outMtlPath,
+	const Eigen::MatrixXd& vertices, const Eigen::MatrixXi& faces, const Eigen::MatrixXd& normals,
+	const Eigen::MatrixXi& faces2Normals, const Eigen::MatrixXd& textureCoordinates,
+	const Eigen::MatrixXi& faces2TextureCoordinates, std::string materialName)
+{
+
+	std::string tmpFilePath = outObjPath + ".tmp"; //"..\\fragments\\cube\\cube_igl_tmp.obj";
+	igl::writeOBJ(tmpFilePath, vertices, faces, normals, //parentNormals,
+		faces2Normals, textureCoordinates, faces2TextureCoordinates);
+
+	std::ofstream outFile(outObjPath);
+	outFile << "# Generated with Libigl \n";
+	outFile << "mtllib " << outMtlPath << "\n";
+	outFile << "usemtl " << materialName << "\n";
+
+
+	{
+		std::ifstream objData(tmpFilePath);
+
+		for (std::string line; getline(objData, line); )
+		{
+			outFile << line << "\n";
+		}
+	}
+
+	std::filesystem::remove(tmpFilePath);
+
 }

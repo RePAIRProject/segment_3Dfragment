@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 		//segment_opposite_surface(fragment,true,false);
 		//segment_sidewalls_surface(fragment,true, false);
 
-		colorSmooth(fragment, true, true);
+		colorSmooth(fragment, true, false);
 
 	}
 	//catch (const std::exception& exc)

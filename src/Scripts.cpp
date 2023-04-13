@@ -810,6 +810,44 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 		};
 		visualizer.launch();
 	}
+
+
+	if (isSave)
+	{
+		std::string mtlName = fragment.m_Name + "_bambooMap.mtl";
+		std::string mtlPath = fragment.m_FolderPath + "\\" + mtlName;
+		std::string imgPath = "platte.jpg";
+		std::string materialName = "material_0";
+		saveMtlFile(mtlPath, imgPath);
+
+		Eigen::MatrixXd textureCoords(fragment.m_Vertices.rows(),2);
+		std::vector<double> epsilons = { 0,0.000001,-0.000001 };
+
+		for (int i = 0; i < textureCoords.rows(); i++)
+		{
+			/// Making the face reddit\whiter as the height value increases
+			double reddisht = fragVertsInSvdcol22Colors(i ,0);
+			double eps = epsilons[i % 3];
+			textureCoords.row(i) << eps+0.999999,reddisht;
+		}
+
+		Eigen::MatrixXi face2TextureCoords(fragment.m_Faces.rows(),3);
+
+		for (int i = 0; i < fragment.m_Faces.rows(); i++)
+		{
+			int vert1 = fragment.m_Faces(i, 0);
+			int vert2 = fragment.m_Faces(i, 1);
+			int vert3 = fragment.m_Faces(i, 2);
+
+			face2TextureCoords.row(i) << vert1,vert2 ,vert3;
+		}
+		
+		std::string objPath = fragment.m_FolderPath + "\\" + fragment.m_Name + "_bambooMap.obj";
+		saveObjFile(objPath, mtlName,
+			fragment.m_Vertices, fragment.m_Faces, fragment.m_Normals,
+			fragment.m_Faces2Normals, textureCoords, face2TextureCoords);
+
+	}
 }
 
 
