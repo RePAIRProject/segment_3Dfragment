@@ -3,9 +3,9 @@
 #include "ScriptsUtils.h"
 
 
-Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdThershold, double intactSimilarityFracture, bool isSave, bool isVisualizer)
+Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdThershold, double intactSimilarityFracture,
+	bool isSave, bool isDebug)
 {
-
 	std::cout << "**************** segment_intact_surface **************** " << std::endl;
 
 	std::vector<std::vector<int>> oRegionsList;
@@ -14,7 +14,7 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 	std::vector<Segment> segments;
 	std::map<int, Segment*> smallSegments;
 	std::map<int, Segment*> bigSegments;
-	double fracture = intactSimilarityFracture; // 0.65; //0.65;
+	double fracture = intactSimilarityFracture; 
 	double minBigSegPercSize = 0.05;
 	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
 	double MAX_NUM_TRIALS = 6;
@@ -62,22 +62,13 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 			continue;
 		}
 		
-		/*if (bigSegments.size() == 1)
-		{
-			fracture = fracture - 0.12;
-			continue;
-		}*/
-		
-
-		intactIndex = 0;//-1;
+		intactIndex = 0;
 		double minMeanCurvedness = 9999999;
 
 		for(auto seg = bigSegments.begin(); seg!= bigSegments.end(); ++seg)
 		{
 			double segCurvedness = 0;
-			//auto piece_vertices_index_ = seg.piece_vertices_index_;
 			auto& piece_vertices_index_ = seg->second->piece_vertices_index_;
-
 
 			for (int verIndex : piece_vertices_index_)
 			{
@@ -87,6 +78,7 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 			seg->second->loadNormedNormals();
 			Eigen::Vector3d avgNormal_debug = calcAvg(seg->second->m_NormedNormals);
 			auto y = avgNormal_debug.coeff(1);
+
 			// checking the intact turns its face up
 			if (y < 0)
 			{
@@ -98,9 +90,8 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 			if (segAvgCur < minMeanCurvedness)
 			{
 				minMeanCurvedness = segAvgCur;
-				intactIndex = seg->first; //k;
+				intactIndex = seg->first; 
 			}
-
 		}
 
 		Segment& intactSurface = segments[intactIndex];
@@ -108,7 +99,6 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 		Eigen::Vector3d avgNormal = calcAvg(intactSurface.m_NormedNormals);
 		Eigen::Vector3d stdNormal = calcVariance(intactSurface.m_NormedNormals, avgNormal).array().sqrt();
 		double l2 = stdNormal.norm();
-
 
 		if (l2 < intactNormalStdThershold)
 		{
@@ -124,24 +114,11 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 	
 	if (isSave)
 	{
-
-		/*if (isSaveAll)
-		{
-			int ii = 0;
-
-			for (auto seg = bigSegments.begin(); seg != bigSegments.end(); ++seg) 
-			{
-				seg->second->saveAsObj(fragment.m_FolderPath + "\\" + fragment.m_Name + "_intact.obj");
-
-			}
-		}*/
-
 		segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + fragment.m_Name+ "_intact.obj" );
 		std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
 	}
 
-	//bool isVisualizer = true; // Make this function param when refactor
-	if (isVisualizer)
+	if (isDebug)
 	{
 		std::map<int, Eigen::RowVector3d> meshColors;
 		generateRandomColors(meshColors, segments.size());
@@ -151,7 +128,6 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 		colorFrag(segment2Colors, smallSegments, colorIt);
 		colorFrag(segment2Colors, bigSegments, colorIt);
 
-		
 		colorIt = meshColors.begin();
 		Eigen::MatrixXd intact2Colors = Eigen::MatrixXd::Ones(fragment.m_Vertices.rows(), 4);
 		std::map<int, Segment*> tmpContainer;
@@ -183,7 +159,6 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 				std::cout << "Pressed 2" << std::endl;
 				break;
 
-
 				return false;
 			};
 
@@ -195,7 +170,8 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 	return segments[intactIndex];
 }
 
-void segment_opposite_surface(ObjFragment& fragment, double intactNormalStdThershold,  double intactSimilarityFracture, bool isSave, bool isVisualizer)
+void segment_opposite_surface(ObjFragment& fragment, double intactNormalStdThershold,  double intactSimilarityFracture, 
+	bool isSave, bool isDebug)
 {
 	Segment intactSegment = segment_intact_surface(fragment, intactNormalStdThershold,intactSimilarityFracture,false,false);
 
@@ -325,7 +301,7 @@ void segment_opposite_surface(ObjFragment& fragment, double intactNormalStdThers
 		}
 	}
 
-	if (isVisualizer)
+	if (isDebug)
 	{
 
 
@@ -374,7 +350,8 @@ void segment_opposite_surface(ObjFragment& fragment, double intactNormalStdThers
 
 
 
-void segment_sidewalls_surface(ObjFragment& fragment,double intactNormalStdThershold, double intactSimilarityFracture, bool isSave, bool isVisualizer)
+void segment_sidewalls_surface(ObjFragment& fragment,double intactNormalStdThershold, double intactSimilarityFracture,
+	bool isSave, bool isDebug)
 {
 	Segment intactSegment = segment_intact_surface(fragment, intactNormalStdThershold,intactSimilarityFracture,false,false);
 
@@ -513,7 +490,7 @@ void segment_sidewalls_surface(ObjFragment& fragment,double intactNormalStdThers
 	Eigen::MatrixXd wallSegmentMergeColors = Eigen::MatrixXd::Zero(fragment.m_Vertices.rows(), 4);
 	colorFrag(wallSegmentMergeColors, sideWallSegSeeds, meshColors.begin());
 	
-	if (isVisualizer)
+	if (isDebug)
 	{
 		Visualizer visualizer;
 
