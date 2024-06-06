@@ -4,7 +4,7 @@
 #include "SpectralClustering.h"
 
 
-Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
+Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdThershold, double intactSimilarityFracture, bool isSave, bool isVisualizer)
 {
 
 	std::cout << "**************** segment_intact_surface **************** " << std::endl;
@@ -15,7 +15,7 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 	std::vector<Segment> segments;
 	std::map<int, Segment*> smallSegments;
 	std::map<int, Segment*> bigSegments;
-	double fracture = 0.65; //0.65;
+	double fracture = intactSimilarityFracture; // 0.65; //0.65;
 	double minBigSegPercSize = 0.05;
 	double fragmentSize = static_cast<double>(fragment.m_Vertices.rows());
 	double MAX_NUM_TRIALS = 6;
@@ -36,7 +36,7 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 		if (fracture > 1 || fracture <=0)
 		{
 			std::cout << "fracrure value is " << fracture << " and it should be between 0 to 1" << std::endl;
-			std::cout << "Please rerun mannually..exiting" << std::endl;
+			std::cout << "Please rerun " << fragment.m_Name << " mannually..exiting" << std::endl;
 			std::exit(1);
 		}
 
@@ -70,11 +70,9 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 		}*/
 		
 
-		intactIndex = -1;
+		intactIndex = 0;//-1;
 		double minMeanCurvedness = 9999999;
-		int k = 0;
 
-		//for (Segment& seg : segments)
 		for(auto seg = bigSegments.begin(); seg!= bigSegments.end(); ++seg)
 		{
 			double segCurvedness = 0;
@@ -86,6 +84,15 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 			{
 				segCurvedness += fragment.m_NormedMeshCurvedness[verIndex];
 			}
+			
+			seg->second->loadNormedNormals();
+			Eigen::Vector3d avgNormal_debug = calcAvg(seg->second->m_NormedNormals);
+			auto y = avgNormal_debug.coeff(1);
+			// checking the intact turns its face up
+			if (y < 0)
+			{
+				continue;
+			}
 
 			double segAvgCur = segCurvedness / piece_vertices_index_.size();
 
@@ -95,25 +102,21 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 				intactIndex = seg->first; //k;
 			}
 
-			++k;
 		}
 
 		Segment& intactSurface = segments[intactIndex];
-		//Segment& intactSurface = *bigSegments.at(intactIndex);
-		intactSurface.loadNormedNormals();
+		//intactSurface.loadNormedNormals();
 		Eigen::Vector3d avgNormal = calcAvg(intactSurface.m_NormedNormals);
 		Eigen::Vector3d stdNormal = calcVariance(intactSurface.m_NormedNormals, avgNormal).array().sqrt();
 		double l2 = stdNormal.norm();
 
-		if (l2 < 0.2)
-		//if (l2 < 0.2)
-		//if (l2 < 0.05)
-		//if (l2 < 0.1)
+
+		if (l2 < intactNormalStdThershold)
 		{
 			isSegmented = true;
 		}
 		else {
-			std::cout << "the std of the normals seems to be to much big - continue to segment" << std::endl;
+			std::cout << "the std of the normals is " << l2 <<" , it seems to be to much big - continue to segment" << std::endl;
 			fracture = fracture - 0.08;
 		}
 	}
@@ -123,11 +126,22 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 	if (isSave)
 	{
 
+		/*if (isSaveAll)
+		{
+			int ii = 0;
+
+			for (auto seg = bigSegments.begin(); seg != bigSegments.end(); ++seg) 
+			{
+				seg->second->saveAsObj(fragment.m_FolderPath + "\\" + fragment.m_Name + "_intact.obj");
+
+			}
+		}*/
+
 		segments[intactIndex].saveAsObj(fragment.m_FolderPath + "\\" + fragment.m_Name+ "_intact.obj" );
 		std::cout << "Write successfully the output to path " << fragment.m_FolderPath << std::endl;
 	}
 
-	bool isVisualizer = false; // Make this function param when refactor
+	//bool isVisualizer = true; // Make this function param when refactor
 	if (isVisualizer)
 	{
 		std::map<int, Eigen::RowVector3d> meshColors;
@@ -182,9 +196,9 @@ Segment segment_intact_surface(ObjFragment& fragment,bool isSave)
 	return segments[intactIndex];
 }
 
-void segment_opposite_surface(ObjFragment& fragment, bool isSave, bool isVisualizer)
+void segment_opposite_surface(ObjFragment& fragment, double intactNormalStdThershold,  double intactSimilarityFracture, bool isSave, bool isVisualizer)
 {
-	Segment intactSegment = segment_intact_surface(fragment,isSave);
+	Segment intactSegment = segment_intact_surface(fragment, intactNormalStdThershold,intactSimilarityFracture,isSave,false);
 
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
@@ -363,9 +377,9 @@ void segment_opposite_surface(ObjFragment& fragment, bool isSave, bool isVisuali
 
 
 
-void segment_sidewalls_surface(ObjFragment& fragment, bool isSave, bool isVisualizer)
+void segment_sidewalls_surface(ObjFragment& fragment,double intactNormalStdThershold, double intactSimilarityFracture, bool isSave, bool isVisualizer)
 {
-	Segment intactSegment = segment_intact_surface(fragment,isSave);
+	Segment intactSegment = segment_intact_surface(fragment, intactNormalStdThershold,intactSimilarityFracture,isSave,false);
 
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
@@ -735,8 +749,34 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 		fragVertsEigenValueHieght2Colors.row(i) << r, 0, 0,1 ;//* heightBias* heightBias;
 	}
 
-	// Maybe here map the height to a wider domain and make an exponential penalty....
+	Eigen::MatrixXd fragNormalAligned = fragment.m_Normals.rowwise() - fragment.m_Normals.colwise().mean();
 
+	// we can directly take SVD
+	Eigen::JacobiSVD<Eigen::MatrixXd> svdNormal(fragNormalAligned, Eigen::ComputeThinV);
+
+	Eigen::MatrixXd Wnormal = svdNormal.matrixV().leftCols(3);
+
+	// then to project the data:
+	Eigen::MatrixXd normalProjected = fragNormalAligned * Wnormal;
+
+
+	Eigen::MatrixXd normalSvdcol02Colors = Eigen::MatrixXd::Zero(fragment.m_Normals.rows(), 4);
+	Eigen::VectorXd normal_0 = normalProjected.col(0); // hardcoded for RPF_438 group 52 , this is the height of the manifold
+	//heightNormed = heightNormed.normalized() * 100;
+	normalSvdcol02Colors.col(0) = normal_0;
+	normalSvdcol02Colors.col(3) = Eigen::VectorXd::Ones(normal_0.rows());
+
+	Eigen::MatrixXd normalSvdcol12Colors = Eigen::MatrixXd::Zero(fragment.m_Normals.rows(), 4);
+	Eigen::VectorXd normal_1 = normalProjected.col(1);
+	//heightNormed  = heightNormed.normalized() * -100;
+	normalSvdcol12Colors.col(0) = normal_1;
+	normalSvdcol12Colors.col(3) = Eigen::VectorXd::Ones(normal_1.rows());
+
+	Eigen::MatrixXd normalSvdcol22Colors = Eigen::MatrixXd::Zero(fragment.m_Normals.rows(), 4);
+	Eigen::VectorXd normal_2 = normalProjected.col(2);
+	//heightNormed  = heightNormed.normalized() * -100;
+	normalSvdcol22Colors.col(0) = normal_2;
+	normalSvdcol22Colors.col(3) = Eigen::VectorXd::Ones(normal_2.rows());
 
 	if (isVisualizer)
 	{
@@ -800,7 +840,18 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 				visualizer.m_Viewer.data().set_colors(fragVertsEigenValueHieght2Colors);//meshColors[0]
 				std::cout << "Pressed 2" << std::endl;
 				break;
-
+			case 'Q':
+				visualizer.m_Viewer.data().set_colors(normalSvdcol02Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+			case 'W':
+				visualizer.m_Viewer.data().set_colors(normalSvdcol12Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
+			case 'E':
+				visualizer.m_Viewer.data().set_colors(normalSvdcol22Colors);//meshColors[0]
+				std::cout << "Pressed 2" << std::endl;
+				break;
 
 				return false;
 			};
@@ -820,26 +871,47 @@ void colorSmooth(ObjFragment& fragment, bool isSave, bool isVisualizer)
 		std::string materialName = "material_0";
 		saveMtlFile(mtlPath, imgPath);
 
-		Eigen::MatrixXd textureCoords(fragment.m_Faces.rows()*3,2);
 		
-		for (int i = 0; i < fragment.m_Faces.rows(); i++)
-		{
-			/// Making the face reddit\whiter as the height value increases
-			int vert1 = fragment.m_Faces(i, 0);
-			int vert2 = fragment.m_Faces(i, 1);
-			int vert3 = fragment.m_Faces(i, 2);
-			double reddisht = (fragVertsInSvdcol22Colors(vert1, 0) + fragVertsInSvdcol22Colors(vert2, 0) + fragVertsInSvdcol22Colors(vert3, 0))/3;
-			reddisht = reddisht * 0.01; //0.001;
-			textureCoords.row(i+0) << 1.000000 ,reddisht;
-			textureCoords.row(i+1) << 1.0000001 ,reddisht*0.00001;
-			textureCoords.row(i+2) << 1.0000002 ,reddisht;
-		}
+		int knownColors = 2;
+		Eigen::MatrixXd textureCoords(knownColors*3,2);
+		
+		// red color
+		textureCoords.row(0) << 1.000000, 0.333333;
+		textureCoords.row(1) << 1.000001, 0.333335;
+		textureCoords.row(2) << 1.000002, 0.333333;
+		
+		// white color
+		textureCoords.row(3) << 1.000000, 1.000000;
+		textureCoords.row(4) << 1.000000, 1.000005;
+		textureCoords.row(5) << 0.999999, 1.000003;
 
+		//double heightMean = fragVertsInSvdcol22Colors.col(0).mean();
+
+		std::vector<double> heights_;
+		for (int64_t i = 0; i < fragVertsInSvdcol22Colors.col(0).rows(); ++i)
+			heights_.push_back(fragVertsInSvdcol22Colors(i,0));
+
+		std::sort(heights_.begin(), heights_.end());
+		const auto median_it = heights_.begin() + heights_.size() * 0.70;//0.65 good for fine segmentation  //0.5 good for detecting intact vs fractured when removing region merging 
+		std::nth_element(heights_.begin(), median_it, heights_.end());
+		double heightMean = *median_it;
+		
 		Eigen::MatrixXi face2TextureCoords(fragment.m_Faces.rows(),3);
 
 		for (int i = 0; i < fragment.m_Faces.rows(); i+=1)
 		{
-			face2TextureCoords.row(i) << i,i+1 ,i+2;// The vertex of each face are more 
+			int vert1 = fragment.m_Faces(i, 0);
+			int vert2 = fragment.m_Faces(i, 1);
+			int vert3 = fragment.m_Faces(i, 2);
+			double h = (fragVertsInSvdcol22Colors(vert1, 0) + fragVertsInSvdcol22Colors(vert2, 0) + fragVertsInSvdcol22Colors(vert3, 0)) / 3;
+			
+			if (h > heightMean)
+			{
+				face2TextureCoords.row(i) << 0, 1, 2;
+			}else
+			{
+				face2TextureCoords.row(i) << 3, 4, 5;
+			}
 		}
 		
 		std::string objPath = fragment.m_FolderPath + "\\" + fragment.m_Name + "_bambooMap.obj";

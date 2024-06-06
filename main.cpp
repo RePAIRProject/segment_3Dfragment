@@ -20,6 +20,18 @@ int main(int argc, char* argv[])
 		}
 
 		std::string fragmentPath = all_args[0];
+		double intactNormalStdThershold = 0.2;
+		double intactSimilarityFracture = 0.65;
+
+		if (all_args.size() > 1) {
+			intactNormalStdThershold = std::stod(all_args[1]);
+		} 
+
+		if (all_args.size() > 2)
+		{
+			intactSimilarityFracture = std::stod(all_args[2]);
+		}
+
 		ObjFragment fragment = ObjFragment(fragmentPath);
 		std::cout << "Loading data" << std::endl;
 		fragment.load();
@@ -28,12 +40,12 @@ int main(int argc, char* argv[])
 		//std::string outFileName = all_args[1];
 		//std::string isSave = all_args[2];
 
-		//segment_intact_surface(fragment, true);
+		segment_intact_surface(fragment, intactNormalStdThershold, intactSimilarityFracture, false,true);
 
 		//segment_opposite_surface(fragment,true,false);
 		//segment_sidewalls_surface(fragment,true, false);
 
-		colorSmooth(fragment, true, false);
+		//colorSmooth(fragment, true, true);
 
 	}
 	//catch (const std::exception& exc)
