@@ -3,7 +3,7 @@
 #include "ScriptsUtils.h"
 
 
-Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdThershold, double intactSimilarityFracture,
+Segment segmentIntactSurface(ObjFragment& fragment, double intactNormalStdThershold, double intactSimilarityFracture,
 	bool isSave, bool isDebug)
 {
 	std::cout << "**************** segment_intact_surface **************** " << std::endl;
@@ -170,10 +170,10 @@ Segment segment_intact_surface(ObjFragment& fragment, double intactNormalStdTher
 	return segments[intactIndex];
 }
 
-void segment_opposite_surface(ObjFragment& fragment, double intactNormalStdThershold,  double intactSimilarityFracture, 
+void segmentOppositeSurface(ObjFragment& fragment, double intactNormalStdThershold,  double intactSimilarityFracture, 
 	bool isSave, bool isDebug)
 {
-	Segment intactSegment = segment_intact_surface(fragment, intactNormalStdThershold,intactSimilarityFracture,false,false);
+	Segment intactSegment = segmentIntactSurface(fragment, intactNormalStdThershold,intactSimilarityFracture,false,false);
 
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;
@@ -350,10 +350,10 @@ void segment_opposite_surface(ObjFragment& fragment, double intactNormalStdThers
 
 
 
-void segment_sidewalls_surface(ObjFragment& fragment,double intactNormalStdThershold, double intactSimilarityFracture,
+void segmentSidewallsSurface(ObjFragment& fragment,double intactNormalStdThershold, double intactSimilarityFracture,
 	bool isSave, bool isDebug)
 {
-	Segment intactSegment = segment_intact_surface(fragment, intactNormalStdThershold,intactSimilarityFracture,false,false);
+	Segment intactSegment = segmentIntactSurface(fragment, intactNormalStdThershold,intactSimilarityFracture,false,false);
 
 	std::vector<std::vector<int>> oRegionsList;
 	std::vector<std::vector<int>> oRegionOutsideBoundaryVerticesList;

@@ -11,7 +11,6 @@ int main(int argc, char* argv[])
 {
 	try
 	{
-		
 		std::map<std::string, std::string> params;
 		bool isSave = true;
 		bool isDebug = false;
@@ -70,24 +69,23 @@ int main(int argc, char* argv[])
 		std::string script = "segment_intact_surface";
 		if (params.find("--script") != params.end()) { script = params["--script"]; }
 
-		
 		ObjFragment fragment = ObjFragment(fragmentPath);
 		std::cout << "Loading data" << std::endl;
 		fragment.load();
 		std::cout << "Start script for fragment: " << fragment.m_Name << std::endl;
 
-		if (script == "segment_opposite_surface")
+		if (script == "opposite-surface")
 		{
-			segment_opposite_surface(fragment, intactNormalStdThershold, intactSimilarityFracture, isSave,isDebug);
+			segmentOppositeSurface(fragment, intactNormalStdThershold, intactSimilarityFracture, isSave,isDebug);
 		} else
 		{
-			if (script == "segment_sidewalls_surface")
+			if (script == "sidewalls-surface")
 			{
-				segment_sidewalls_surface(fragment, intactNormalStdThershold, intactSimilarityFracture, isSave,isDebug);
+				segmentSidewallsSurface(fragment, intactNormalStdThershold, intactSimilarityFracture, isSave,isDebug);
 			}
 			else
 			{
-				segment_intact_surface(fragment, intactNormalStdThershold, intactSimilarityFracture, isSave, isDebug);
+				segmentIntactSurface(fragment, intactNormalStdThershold, intactSimilarityFracture, isSave, isDebug);
 			}
 		}
 	}
