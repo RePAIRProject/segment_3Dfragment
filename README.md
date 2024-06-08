@@ -3,6 +3,7 @@ This repository is designed to segment a fresco fragment into meaningful surface
 
 # 1) Description
 This project employs a region-growing algorithm based on the curvedness values of the vertices of the mesh, leveraging differential geometry principles. The algorithm processes a 3D mesh or point cloud of a fresco fragment to identify and segment these distinct surfaces.
+![segment 3d image](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/dc4fb9f0-ff46-4f1c-a17c-4a3fb9edd065)
 
 <p align="center">
   <img src="[path/to/image1.png](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/93f4f15e-7f9a-48a3-a3bc-156218827b56)" alt="Image 1" width="200"/>
