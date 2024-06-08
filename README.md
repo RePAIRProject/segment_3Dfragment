@@ -4,6 +4,16 @@ This repository is designed to segment a fresco fragment into meaningful surface
 # 1) Description
 This project employs a region-growing algorithm based on the curvedness values of the vertices of the mesh, leveraging differential geometry principles. The algorithm processes a 3D mesh or point cloud of a fresco fragment to identify and segment these distinct surfaces.
 
+<p align="center">
+  <img src="[path/to/image1.png](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/93f4f15e-7f9a-48a3-a3bc-156218827b56)" alt="Image 1" width="200"/>
+  <img src="[path/to/image2.png](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/91f915f2-b4d7-4354-89fd-54288aaf7160)" alt="Image 2" width="200"/>
+  <img src="[path/to/image3.png](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/3016e85b-c573-47ac-8f0a-082ac7766a43)" alt="Image 3" width="200"/>
+  <br/>
+  <img src="[path/to/image4.png](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/10d75203-1feb-4d02-878c-f2d3c9a8deea)" alt="Image 4" width="200"/>
+  <img src="[path/to/image5.png](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/615b730f-3459-4917-8d58-1f11a1844c7d)" alt="Image 5" width="200"/>
+  <img src="[path/to/image6.png](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/add615cc-bf9d-4315-8628-c1f4505f3ade)" alt="Image 6" width="200"/>
+</p>
+
 ![f](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/93f4f15e-7f9a-48a3-a3bc-156218827b56)
 ![a](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/91f915f2-b4d7-4354-89fd-54288aaf7160)
 ![b](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/3016e85b-c573-47ac-8f0a-082ac7766a43)
