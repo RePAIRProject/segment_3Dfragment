@@ -14,7 +14,7 @@ option(LIBIGL_PNG "Build target igl::png" ON)
 include(libigl)
 
 # Add your project files
-file(GLOB SRC_FILES src/*.cpp *.cpp)
+file(GLOB SRC_FILES src/*.cpp)
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
 # Ensure the necessary include directories
