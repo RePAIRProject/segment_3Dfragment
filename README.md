@@ -41,7 +41,7 @@ Other optional parameters are the following:
 
 ![segmenting the painted surface v1](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/2c43ea98-cd27-4516-ba37-508f9b4f6183)
 <p align="center">
-  <img src="[path/to/image.png](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/2c43ea98-cd27-4516-ba37-508f9b4f6183)" alt="Alt text for the image" width="500"/>
+  <img src="[path/to/image.png](https://github.com/RePAIRProject/segment_3Dfragment/assets/38216201/2c43ea98-cd27-4516-ba37-508f9b4f6183)" width="350"/>
   <br/>
   <em>Figure 1: Pressing 1 in the debug mode. The segments are colored on the mesh.</em>
 </p>
